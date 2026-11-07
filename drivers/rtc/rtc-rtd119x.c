@@ -1,237 +1,270 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * Realtek RTD129x RTC
- *
  * Copyright (c) 2017 Andreas Färber
  */
 
+#include <linux/bits.h>
 #include <linux/clk.h>
+#include <linux/interrupt.h>
 #include <linux/io.h>
+#include <linux/mfd/syscon.h>
+#include <linux/math64.h>
 #include <linux/module.h>
-#include <linux/of.h>
-#include <linux/of_address.h>
+#include <linux/mutex.h>
 #include <linux/platform_device.h>
+#include <linux/pm_wakeirq.h>
+#include <linux/regmap.h>
 #include <linux/rtc.h>
-#include <linux/spinlock.h>
 
 #define RTD_RTCSEC		0x00
 #define RTD_RTCMIN		0x04
-#define RTD_RTCHR		0x08
-#define RTD_RTCDATE1		0x0c
-#define RTD_RTCDATE2		0x10
+#define RTD_ALARMMIN		0x14
 #define RTD_RTCACR		0x28
 #define RTD_RTCEN		0x2c
 #define RTD_RTCCR		0x30
-
-#define RTD_RTCSEC_RTCSEC_MASK		0x7f
-
-#define RTD_RTCMIN_RTCMIN_MASK		0x3f
-
-#define RTD_RTCHR_RTCHR_MASK		0x1f
-
-#define RTD_RTCDATE1_RTCDATE1_MASK	0xff
-
-#define RTD_RTCDATE2_RTCDATE2_MASK	0x7f
-
-#define RTD_RTCACR_RTCPWR		BIT(7)
-
-#define RTD_RTCEN_RTCEN_MASK		0xff
-
-#define RTD_RTCCR_RTCRST		BIT(6)
+#define RTD_RTCPWR		BIT(7)
+#define RTD_RTCRST		BIT(6)
+#define RTD_ISO_ISR		0x00
+#define RTD_ISO_RTC		0x34
+#define RTD_ALARM_ENABLE	BIT(0)
+#define RTD_ALARM_PENDING	BIT(13)
+#define RTD_TIME_DAYS		GENMASK(14, 0)
+#define RTD_ALARM_DAYS		GENMASK(13, 0)
 
 struct rtd119x_rtc {
 	void __iomem *base;
-	struct clk *clk;
+	struct regmap *iso;
 	struct rtc_device *rtcdev;
-	unsigned int base_year;
+	time64_t epoch;
+	/* Protects calendar updates and alarm state against the interrupt handler. */
+	struct mutex lock;
 };
 
-static inline int rtd119x_rtc_days_in_year(int year)
+static int rtd119x_read_calendar(struct rtd119x_rtc *data, unsigned int offset,
+				 unsigned int day_mask, unsigned int seconds,
+				 struct rtc_time *tm)
 {
-	return 365 + (is_leap_year(year) ? 1 : 0);
+	unsigned int minute = readl(data->base + offset) & 0x3f;
+	unsigned int hour = readl(data->base + offset + 4) & 0x1f;
+	unsigned int day = readl(data->base + offset + 8) & 0xff;
+
+	day |= (readl(data->base + offset + 12) << 8) & day_mask;
+	if (seconds > 59 || minute > 59 || hour > 23)
+		return -EINVAL;
+	rtc_time64_to_tm(data->epoch + (time64_t)day * 86400 +
+			 hour * 3600 + minute * 60 + seconds, tm);
+	return 0;
 }
 
-static void rtd119x_rtc_reset(struct device *dev)
+static void rtd119x_write_calendar(struct rtd119x_rtc *data, unsigned int offset,
+				   time64_t elapsed, const struct rtc_time *tm)
 {
-	struct rtd119x_rtc *data = dev_get_drvdata(dev);
-	u32 val;
+	unsigned int day = div_s64(elapsed, 86400);
 
-	val = readl_relaxed(data->base + RTD_RTCCR);
-	val |= RTD_RTCCR_RTCRST;
-	writel_relaxed(val, data->base + RTD_RTCCR);
-
-	val &= ~RTD_RTCCR_RTCRST;
-	writel(val, data->base + RTD_RTCCR);
-}
-
-static void rtd119x_rtc_set_enabled(struct device *dev, bool enable)
-{
-	struct rtd119x_rtc *data = dev_get_drvdata(dev);
-	u32 val;
-
-	val = readl_relaxed(data->base + RTD_RTCEN);
-	if (enable) {
-		if ((val & RTD_RTCEN_RTCEN_MASK) == 0x5a)
-			return;
-		writel_relaxed(0x5a, data->base + RTD_RTCEN);
-	} else {
-		writel_relaxed(0, data->base + RTD_RTCEN);
-	}
+	writel(tm->tm_min, data->base + offset);
+	writel(tm->tm_hour, data->base + offset + 4);
+	writel(day & 0xff, data->base + offset + 8);
+	writel(day >> 8, data->base + offset + 12);
 }
 
 static int rtd119x_rtc_read_time(struct device *dev, struct rtc_time *tm)
 {
 	struct rtd119x_rtc *data = dev_get_drvdata(dev);
-	s32 day;
-	u32 sec;
-	unsigned int year;
-	int tries = 0;
+	unsigned int seconds;
+	int ret = -EAGAIN;
 
-	while (true) {
-		tm->tm_sec = (readl_relaxed(data->base + RTD_RTCSEC) & RTD_RTCSEC_RTCSEC_MASK) >> 1;
-		tm->tm_min  = readl_relaxed(data->base + RTD_RTCMIN) & RTD_RTCMIN_RTCMIN_MASK;
-		tm->tm_hour = readl_relaxed(data->base + RTD_RTCHR) & RTD_RTCHR_RTCHR_MASK;
-		day  =  readl_relaxed(data->base + RTD_RTCDATE1) & RTD_RTCDATE1_RTCDATE1_MASK;
-		day |= (readl_relaxed(data->base + RTD_RTCDATE2) & RTD_RTCDATE2_RTCDATE2_MASK) << 8;
-		sec  = (readl_relaxed(data->base + RTD_RTCSEC) & RTD_RTCSEC_RTCSEC_MASK) >> 1;
-		tries++;
-
-		if (sec == tm->tm_sec)
+	mutex_lock(&data->lock);
+	for (int tries = 0; tries < 3; tries++) {
+		seconds = (readl(data->base + RTD_RTCSEC) & 0x7f) >> 1;
+		ret = rtd119x_read_calendar(data, RTD_RTCMIN, RTD_TIME_DAYS, seconds, tm);
+		if (ret || seconds == ((readl(data->base + RTD_RTCSEC) & 0x7f) >> 1))
 			break;
-
-		if (tries >= 3)
-			return -EINVAL;
+		ret = -EAGAIN;
 	}
-	if (tries > 1)
-		dev_dbg(dev, "%s: needed %i tries\n", __func__, tries);
-
-	year = data->base_year;
-	while (day >= rtd119x_rtc_days_in_year(year)) {
-		day -= rtd119x_rtc_days_in_year(year);
-		year++;
-	}
-	tm->tm_year = year - 1900;
-	tm->tm_yday = day;
-
-	tm->tm_mon = 0;
-	while (day >= rtc_month_days(tm->tm_mon, year)) {
-		day -= rtc_month_days(tm->tm_mon, year);
-		tm->tm_mon++;
-	}
-	tm->tm_mday = day + 1;
-
-	return 0;
+	mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int rtd119x_rtc_set_time(struct device *dev, struct rtc_time *tm)
 {
 	struct rtd119x_rtc *data = dev_get_drvdata(dev);
-	unsigned int day;
-	int i;
+	time64_t elapsed = rtc_tm_to_time64(tm) - data->epoch;
 
-	if (1900 + tm->tm_year < data->base_year)
+	if (elapsed < 0 || elapsed / 86400 > RTD_TIME_DAYS)
 		return -EINVAL;
-
-	day = 0;
-	for (i = data->base_year; i < 1900 + tm->tm_year; i++)
-		day += rtd119x_rtc_days_in_year(i);
-
-	day += tm->tm_yday;
-	if (day > 0x7fff)
-		return -EINVAL;
-
-	rtd119x_rtc_set_enabled(dev, false);
-
-	writel_relaxed((tm->tm_sec << 1) & RTD_RTCSEC_RTCSEC_MASK, data->base + RTD_RTCSEC);
-	writel_relaxed(tm->tm_min & RTD_RTCMIN_RTCMIN_MASK, data->base + RTD_RTCMIN);
-	writel_relaxed(tm->tm_hour & RTD_RTCHR_RTCHR_MASK, data->base + RTD_RTCHR);
-	writel_relaxed(day & RTD_RTCDATE1_RTCDATE1_MASK, data->base + RTD_RTCDATE1);
-	writel_relaxed((day >> 8) & RTD_RTCDATE2_RTCDATE2_MASK, data->base + RTD_RTCDATE2);
-
-	rtd119x_rtc_set_enabled(dev, true);
-
+	mutex_lock(&data->lock);
+	writel(0, data->base + RTD_RTCEN);
+	writel(tm->tm_sec << 1, data->base + RTD_RTCSEC);
+	rtd119x_write_calendar(data, RTD_RTCMIN, elapsed, tm);
+	writel(0x5a, data->base + RTD_RTCEN);
+	mutex_unlock(&data->lock);
 	return 0;
 }
 
-static const struct rtc_class_ops rtd119x_rtc_ops = {
-	.read_time	= rtd119x_rtc_read_time,
-	.set_time	= rtd119x_rtc_set_time,
+static int rtd119x_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alarm)
+{
+	struct rtd119x_rtc *data = dev_get_drvdata(dev);
+	unsigned int enable, pending;
+	int ret;
+
+	mutex_lock(&data->lock);
+	ret = rtd119x_read_calendar(data, RTD_ALARMMIN, RTD_ALARM_DAYS, 0, &alarm->time);
+	if (!ret)
+		ret = regmap_read(data->iso, RTD_ISO_RTC, &enable);
+	if (!ret)
+		ret = regmap_read(data->iso, RTD_ISO_ISR, &pending);
+	if (!ret) {
+		alarm->enabled = !!(enable & RTD_ALARM_ENABLE);
+		alarm->pending = !!(pending & RTD_ALARM_PENDING);
+	}
+	mutex_unlock(&data->lock);
+	return ret;
+}
+
+static int rtd119x_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alarm)
+{
+	struct rtd119x_rtc *data = dev_get_drvdata(dev);
+	time64_t elapsed = rtc_tm_to_time64(&alarm->time) - data->epoch;
+	int ret;
+
+	if (elapsed < 0 || elapsed / 86400 > RTD_ALARM_DAYS || alarm->time.tm_sec)
+		return -EINVAL;
+	mutex_lock(&data->lock);
+	ret = regmap_clear_bits(data->iso, RTD_ISO_RTC, RTD_ALARM_ENABLE);
+	if (ret)
+		goto out;
+	rtd119x_write_calendar(data, RTD_ALARMMIN, elapsed, &alarm->time);
+	ret = regmap_write(data->iso, RTD_ISO_ISR, RTD_ALARM_PENDING);
+	if (!ret && alarm->enabled)
+		ret = regmap_set_bits(data->iso, RTD_ISO_RTC, RTD_ALARM_ENABLE);
+out:
+	mutex_unlock(&data->lock);
+	return ret;
+}
+
+static int rtd119x_rtc_alarm_enable(struct device *dev, unsigned int enable)
+{
+	struct rtd119x_rtc *data = dev_get_drvdata(dev);
+	int ret;
+
+	mutex_lock(&data->lock);
+	ret = regmap_update_bits(data->iso, RTD_ISO_RTC, RTD_ALARM_ENABLE,
+				 enable ? RTD_ALARM_ENABLE : 0);
+	mutex_unlock(&data->lock);
+	return ret;
+}
+
+static irqreturn_t rtd119x_rtc_irq(int irq, void *arg)
+{
+	struct rtd119x_rtc *data = arg;
+
+	mutex_lock(&data->lock);
+	regmap_clear_bits(data->iso, RTD_ISO_RTC, RTD_ALARM_ENABLE);
+	mutex_unlock(&data->lock);
+	rtc_update_irq(data->rtcdev, 1, RTC_IRQF | RTC_AF);
+	return IRQ_HANDLED;
+}
+
+static const struct rtc_class_ops rtd119x_time_ops = {
+	.read_time = rtd119x_rtc_read_time,
+	.set_time = rtd119x_rtc_set_time,
 };
 
-static const struct of_device_id rtd119x_rtc_dt_ids[] = {
-	 { .compatible = "realtek,rtd1295-rtc" },
-	 { }
+static const struct rtc_class_ops rtd119x_alarm_ops = {
+	.read_time = rtd119x_rtc_read_time,
+	.set_time = rtd119x_rtc_set_time,
+	.read_alarm = rtd119x_rtc_read_alarm,
+	.set_alarm = rtd119x_rtc_set_alarm,
+	.alarm_irq_enable = rtd119x_rtc_alarm_enable,
 };
+
+static void rtd119x_rtc_wakeup_disable(void *arg)
+{
+	device_init_wakeup(arg, false);
+}
 
 static int rtd119x_rtc_probe(struct platform_device *pdev)
 {
+	struct device *dev = &pdev->dev;
 	struct rtd119x_rtc *data;
-	u32 val;
-	int ret;
+	struct clk *clk;
+	struct rtc_time initial;
+	unsigned int value;
+	int irq, ret;
 
-	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
+	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
-
-	platform_set_drvdata(pdev, data);
-	data->base_year = 2014;
-
 	data->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(data->base))
 		return PTR_ERR(data->base);
-
-	data->clk = of_clk_get(pdev->dev.of_node, 0);
-	if (IS_ERR(data->clk))
-		return PTR_ERR(data->clk);
-
-	ret = clk_prepare_enable(data->clk);
-	if (ret) {
-		clk_put(data->clk);
+	clk = devm_clk_get_enabled(dev, NULL);
+	if (IS_ERR(clk))
+		return dev_err_probe(dev, PTR_ERR(clk), "cannot enable RTC clock\n");
+	ret = devm_mutex_init(dev, &data->lock);
+	if (ret)
 		return ret;
+	data->epoch = mktime64(2014, 1, 1, 0, 0, 0);
+	platform_set_drvdata(pdev, data);
+	value = readl(data->base + RTD_RTCACR);
+	if (!(value & RTD_RTCPWR)) {
+		writel(value | RTD_RTCPWR, data->base + RTD_RTCACR);
+		value = readl(data->base + RTD_RTCCR);
+		writel(value | RTD_RTCRST, data->base + RTD_RTCCR);
+		writel(value & ~RTD_RTCRST, data->base + RTD_RTCCR);
+		rtc_time64_to_tm(data->epoch, &initial);
+		rtd119x_rtc_set_time(dev, &initial);
 	}
+	if ((readl(data->base + RTD_RTCEN) & 0xff) != 0x5a)
+		writel(0x5a, data->base + RTD_RTCEN);
 
-	val = readl_relaxed(data->base + RTD_RTCACR);
-	if (!(val & RTD_RTCACR_RTCPWR)) {
-		writel_relaxed(RTD_RTCACR_RTCPWR, data->base + RTD_RTCACR);
-
-		rtd119x_rtc_reset(&pdev->dev);
-
-		writel_relaxed(0, data->base + RTD_RTCMIN);
-		writel_relaxed(0, data->base + RTD_RTCHR);
-		writel_relaxed(0, data->base + RTD_RTCDATE1);
-		writel_relaxed(0, data->base + RTD_RTCDATE2);
-	}
-
-	rtd119x_rtc_set_enabled(&pdev->dev, true);
-
-	data->rtcdev = devm_rtc_device_register(&pdev->dev, "rtc",
-						&rtd119x_rtc_ops, THIS_MODULE);
-	if (IS_ERR(data->rtcdev)) {
-		dev_err(&pdev->dev, "failed to register rtc device");
-		clk_disable_unprepare(data->clk);
-		clk_put(data->clk);
+	data->rtcdev = devm_rtc_allocate_device(dev);
+	if (IS_ERR(data->rtcdev))
 		return PTR_ERR(data->rtcdev);
+	data->rtcdev->ops = &rtd119x_time_ops;
+	data->rtcdev->range_min = data->epoch;
+	data->rtcdev->range_max = data->epoch + ((time64_t)RTD_TIME_DAYS + 1) * 86400 - 1;
+	irq = platform_get_irq_optional(pdev, 0);
+	if (irq == -EPROBE_DEFER)
+		return irq;
+	if (irq > 0) {
+		data->iso = syscon_regmap_lookup_by_phandle(dev->of_node, "realtek,iso-syscon");
+		if (IS_ERR(data->iso))
+			return dev_err_probe(dev, PTR_ERR(data->iso), "cannot get alarm control\n");
+		ret = regmap_clear_bits(data->iso, RTD_ISO_RTC, RTD_ALARM_ENABLE);
+		if (ret)
+			return ret;
+		ret = devm_request_threaded_irq(dev, irq, NULL, rtd119x_rtc_irq,
+						IRQF_ONESHOT, dev_name(dev), data);
+		if (ret)
+			return dev_err_probe(dev, ret, "cannot request alarm IRQ\n");
+		ret = device_init_wakeup(dev, true);
+		if (ret)
+			return ret;
+		ret = devm_add_action_or_reset(dev, rtd119x_rtc_wakeup_disable, dev);
+		if (ret)
+			return ret;
+		ret = devm_pm_set_wake_irq(dev, irq);
+		if (ret)
+			return ret;
+		data->rtcdev->ops = &rtd119x_alarm_ops;
+		set_bit(RTC_FEATURE_ALARM_RES_MINUTE, data->rtcdev->features);
 	}
-
-	return 0;
+	return devm_rtc_register_device(data->rtcdev);
 }
 
-static void rtd119x_rtc_remove(struct platform_device *pdev)
-{
-	struct rtd119x_rtc *data = platform_get_drvdata(pdev);
-
-	rtd119x_rtc_set_enabled(&pdev->dev, false);
-
-	clk_disable_unprepare(data->clk);
-	clk_put(data->clk);
-}
+static const struct of_device_id rtd119x_rtc_dt_ids[] = {
+	{ .compatible = "realtek,rtd1295-rtc" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, rtd119x_rtc_dt_ids);
 
 static struct platform_driver rtd119x_rtc_driver = {
 	.probe = rtd119x_rtc_probe,
-	.remove = rtd119x_rtc_remove,
 	.driver = {
 		.name = "rtd1295-rtc",
-		.of_match_table	= rtd119x_rtc_dt_ids,
+		.of_match_table = rtd119x_rtc_dt_ids,
 	},
 };
 builtin_platform_driver(rtd119x_rtc_driver);

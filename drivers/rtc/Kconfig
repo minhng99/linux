@@ -2024,6 +2024,7 @@ config RTC_DRV_CPCAP
 	   and tablets such as Droid 4.
 
 config RTC_DRV_RTD119X
+	select MFD_SYSCON
 	bool "Realtek RTD129x RTC"
 	depends on ARCH_REALTEK || COMPILE_TEST
 	default ARCH_REALTEK
