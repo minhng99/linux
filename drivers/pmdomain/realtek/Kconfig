@@ -1,4 +1,16 @@
 # SPDX-License-Identifier: GPL-2.0-only
+config REALTEK_RTD1296_TVE_POWER
+	bool "Realtek RTD1296 TVE analogue power domain"
+	depends on (ARCH_REALTEK || COMPILE_TEST) && OF && PM
+	depends on COMMON_CLK && RESET_CONTROLLER
+	select MFD_SYSCON
+	select PM_GENERIC_DOMAINS
+	help
+	  Control the TVE analogue block used by the microphone ADC.
+	  The provider manages the shared resets and analogue enable.
+	  Its register clock is enabled only during control accesses.
+	  Consumers use runtime PM to request the power domain.
+
 config REALTEK_RTD1296_NAT_POWER
 	bool "Realtek RTD1296 Ethernet switch SRAM power domain"
 	depends on (ARCH_REALTEK || COMPILE_TEST) && OF && PM
