@@ -39,6 +39,18 @@
 
 void __iowrite64_copy_full(void __iomem *to, const void *from, size_t count)
 {
+#ifdef CONFIG_INDIRECT_IOMEM
+	if (unlikely(logic_iomem_is_addr(to))) {
+		const u64 *src = from;
+		u64 __iomem *dst = to;
+
+		while (count--)
+			__raw_writeq(*src++, dst++);
+		dgh();
+		return;
+	}
+#endif
+
 	memcpy_toio_aligned(to, from, count, 64);
 	dgh();
 }
@@ -46,6 +58,18 @@ EXPORT_SYMBOL(__iowrite64_copy_full);
 
 void __iowrite32_copy_full(void __iomem *to, const void *from, size_t count)
 {
+#ifdef CONFIG_INDIRECT_IOMEM
+	if (unlikely(logic_iomem_is_addr(to))) {
+		const u32 *src = from;
+		u32 __iomem *dst = to;
+
+		while (count--)
+			__raw_writel(*src++, dst++);
+		dgh();
+		return;
+	}
+#endif
+
 	memcpy_toio_aligned(to, from, count, 32);
 	dgh();
 }

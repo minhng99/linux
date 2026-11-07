@@ -416,6 +416,16 @@ source "arch/arm64/Kconfig.platforms"
 
 menu "Kernel Features"
 
+config ARM64_INDIRECT_IOMEM
+	bool "Indirect I/O memory access"
+	select INDIRECT_IOMEM
+	select INDIRECT_IOMEM_FALLBACK
+	help
+	  Dispatch registered indirect mappings through their I/O accessors.
+	  Native mappings retain the architectural accessors and mapping attributes.
+	  Enable this when required by an indirect memory provider.
+	  Unregistered ranges continue to use native I/O memory access.
+
 menu "ARM errata workarounds via the alternatives framework"
 
 config AMPERE_ERRATUM_AC03_CPU_38

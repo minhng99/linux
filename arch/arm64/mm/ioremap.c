@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <linux/err.h>
 #include <linux/mm.h>
 #include <linux/io.h>
 
@@ -18,6 +19,17 @@ void __iomem *__ioremap_prot(phys_addr_t phys_addr, size_t size,
 			     pgprot_t pgprot)
 {
 	unsigned long last_addr = phys_addr + size - 1;
+
+#ifdef CONFIG_INDIRECT_IOMEM
+	{
+		void __iomem *addr = logic_iomem_map(phys_addr, size);
+
+		if (!IS_ERR(addr))
+			return addr;
+		if (PTR_ERR(addr) != -ENOENT)
+			return NULL;
+	}
+#endif
 
 	/* Don't allow outside PHYS_MASK */
 	if (last_addr & ~PHYS_MASK)
@@ -40,6 +52,18 @@ void __iomem *__ioremap_prot(phys_addr_t phys_addr, size_t size,
 	return generic_ioremap_prot(phys_addr, size, pgprot);
 }
 EXPORT_SYMBOL(__ioremap_prot);
+
+#ifdef CONFIG_INDIRECT_IOMEM
+void iounmap(volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr))) {
+		logic_iomem_iounmap(addr);
+		return;
+	}
+	generic_iounmap(addr);
+}
+EXPORT_SYMBOL(iounmap);
+#endif
 
 /*
  * Must be called after early_fixmap_init

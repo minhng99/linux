@@ -19,39 +19,40 @@
 #include <asm/cpufeature.h>
 #include <asm/rsi.h>
 
+#if defined(CONFIG_INDIRECT_IOMEM) && \
+	!defined(__KVM_NVHE_HYPERVISOR__) && !defined(__KVM_VHE_HYPERVISOR__)
+#define __ARM64_INDIRECT_IOMEM
+#include <linux/logic_iomem.h>
+#endif
+
 /*
  * Generic IO read/write.  These perform native-endian accesses.
  */
-#define __raw_writeb __raw_writeb
-static __always_inline void __raw_writeb(u8 val, volatile void __iomem *addr)
+static __always_inline void __arm64_raw_writeb(u8 val, volatile void __iomem *addr)
 {
 	volatile u8 __iomem *ptr = addr;
 	asm volatile("strb %w0, %1" : : "rZ" (val), "Qo" (*ptr));
 }
 
-#define __raw_writew __raw_writew
-static __always_inline void __raw_writew(u16 val, volatile void __iomem *addr)
+static __always_inline void __arm64_raw_writew(u16 val, volatile void __iomem *addr)
 {
 	volatile u16 __iomem *ptr = addr;
 	asm volatile("strh %w0, %1" : : "rZ" (val), "Qo" (*ptr));
 }
 
-#define __raw_writel __raw_writel
-static __always_inline void __raw_writel(u32 val, volatile void __iomem *addr)
+static __always_inline void __arm64_raw_writel(u32 val, volatile void __iomem *addr)
 {
 	volatile u32 __iomem *ptr = addr;
 	asm volatile("str %w0, %1" : : "rZ" (val), "Qo" (*ptr));
 }
 
-#define __raw_writeq __raw_writeq
-static __always_inline void __raw_writeq(u64 val, volatile void __iomem *addr)
+static __always_inline void __arm64_raw_writeq(u64 val, volatile void __iomem *addr)
 {
 	volatile u64 __iomem *ptr = addr;
 	asm volatile("str %x0, %1" : : "rZ" (val), "Qo" (*ptr));
 }
 
-#define __raw_readb __raw_readb
-static __always_inline u8 __raw_readb(const volatile void __iomem *addr)
+static __always_inline u8 __arm64_raw_readb(const volatile void __iomem *addr)
 {
 	u8 val;
 	asm volatile(ALTERNATIVE("nop", "dmb osh",
@@ -63,8 +64,7 @@ static __always_inline u8 __raw_readb(const volatile void __iomem *addr)
 	return val;
 }
 
-#define __raw_readw __raw_readw
-static __always_inline u16 __raw_readw(const volatile void __iomem *addr)
+static __always_inline u16 __arm64_raw_readw(const volatile void __iomem *addr)
 {
 	u16 val;
 
@@ -77,8 +77,7 @@ static __always_inline u16 __raw_readw(const volatile void __iomem *addr)
 	return val;
 }
 
-#define __raw_readl __raw_readl
-static __always_inline u32 __raw_readl(const volatile void __iomem *addr)
+static __always_inline u32 __arm64_raw_readl(const volatile void __iomem *addr)
 {
 	u32 val;
 	asm volatile(ALTERNATIVE("nop", "dmb osh",
@@ -90,8 +89,7 @@ static __always_inline u32 __raw_readl(const volatile void __iomem *addr)
 	return val;
 }
 
-#define __raw_readq __raw_readq
-static __always_inline u64 __raw_readq(const volatile void __iomem *addr)
+static __always_inline u64 __arm64_raw_readq(const volatile void __iomem *addr)
 {
 	u64 val;
 	asm volatile(ALTERNATIVE("nop", "dmb osh",
@@ -102,6 +100,91 @@ static __always_inline u64 __raw_readq(const volatile void __iomem *addr)
 		     : "=r" (val) : "r" (addr));
 	return val;
 }
+
+#ifdef __ARM64_INDIRECT_IOMEM
+
+#define __raw_readb __raw_readb
+static __always_inline u8 __raw_readb(const volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr)))
+		return logic_iomem_readb(addr);
+	return __arm64_raw_readb(addr);
+}
+
+#define __raw_writeb __raw_writeb
+static __always_inline void __raw_writeb(u8 value, volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr))) {
+		logic_iomem_writeb(value, addr);
+		return;
+	}
+	__arm64_raw_writeb(value, addr);
+}
+
+#define __raw_readw __raw_readw
+static __always_inline u16 __raw_readw(const volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr)))
+		return logic_iomem_readw(addr);
+	return __arm64_raw_readw(addr);
+}
+
+#define __raw_writew __raw_writew
+static __always_inline void __raw_writew(u16 value, volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr))) {
+		logic_iomem_writew(value, addr);
+		return;
+	}
+	__arm64_raw_writew(value, addr);
+}
+
+#define __raw_readl __raw_readl
+static __always_inline u32 __raw_readl(const volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr)))
+		return logic_iomem_readl(addr);
+	return __arm64_raw_readl(addr);
+}
+
+#define __raw_writel __raw_writel
+static __always_inline void __raw_writel(u32 value, volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr))) {
+		logic_iomem_writel(value, addr);
+		return;
+	}
+	__arm64_raw_writel(value, addr);
+}
+
+#define __raw_readq __raw_readq
+static __always_inline u64 __raw_readq(const volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr)))
+		return logic_iomem_readq(addr);
+	return __arm64_raw_readq(addr);
+}
+
+#define __raw_writeq __raw_writeq
+static __always_inline void __raw_writeq(u64 value, volatile void __iomem *addr)
+{
+	if (unlikely(logic_iomem_is_addr(addr))) {
+		logic_iomem_writeq(value, addr);
+		return;
+	}
+	__arm64_raw_writeq(value, addr);
+}
+
+#else
+#define __raw_readb __arm64_raw_readb
+#define __raw_writeb __arm64_raw_writeb
+#define __raw_readw __arm64_raw_readw
+#define __raw_writew __arm64_raw_writew
+#define __raw_readl __arm64_raw_readl
+#define __raw_writel __arm64_raw_writel
+#define __raw_readq __arm64_raw_readq
+#define __raw_writeq __arm64_raw_writeq
+#endif
 
 /* IO barriers */
 #define __io_ar(v)							\
@@ -198,6 +281,13 @@ void __iowrite32_copy_full(void __iomem *to, const void *from, size_t count);
 static __always_inline void
 __iowrite32_copy(void __iomem *to, const void *from, size_t count)
 {
+#ifdef __ARM64_INDIRECT_IOMEM
+	if (unlikely(logic_iomem_is_addr(to))) {
+		__iowrite32_copy_full(to, from, count);
+		return;
+	}
+#endif
+
 	if (__builtin_constant_p(count) &&
 	    (count == 8 || count == 4 || count == 2 || count == 1)) {
 		__const_memcpy_toio_aligned32(to, from, count);
@@ -255,6 +345,13 @@ void __iowrite64_copy_full(void __iomem *to, const void *from, size_t count);
 static __always_inline void
 __iowrite64_copy(void __iomem *to, const void *from, size_t count)
 {
+#ifdef __ARM64_INDIRECT_IOMEM
+	if (unlikely(logic_iomem_is_addr(to))) {
+		__iowrite64_copy_full(to, from, count);
+		return;
+	}
+#endif
+
 	if (__builtin_constant_p(count) &&
 	    (count == 8 || count == 4 || count == 2 || count == 1)) {
 		__const_memcpy_toio_aligned64(to, from, count);
@@ -268,6 +365,11 @@ __iowrite64_copy(void __iomem *to, const void *from, size_t count)
 /*
  * I/O memory mapping functions.
  */
+
+#ifdef __ARM64_INDIRECT_IOMEM
+#define iounmap iounmap
+void iounmap(volatile void __iomem *addr);
+#endif
 
 typedef int (*ioremap_prot_hook_t)(phys_addr_t phys_addr, size_t size,
 				   pgprot_t *prot);
@@ -313,6 +415,22 @@ static inline void __iomem *ioremap_prot(phys_addr_t phys, size_t size,
 #define iowrite64be(v,p)	({ __iowmb(); __raw_writeq((__force __u64)cpu_to_be64(v), p); })
 
 #include <asm-generic/io.h>
+#if defined(CONFIG_INDIRECT_IOMEM_FALLBACK) && defined(__ARM64_INDIRECT_IOMEM)
+#define real_ioremap ioremap
+#define real_iounmap generic_iounmap
+#define real_raw_readb __arm64_raw_readb
+#define real_raw_readw __arm64_raw_readw
+#define real_raw_readl __arm64_raw_readl
+#define real_raw_readq __arm64_raw_readq
+#define real_raw_writeb __arm64_raw_writeb
+#define real_raw_writew __arm64_raw_writew
+#define real_raw_writel __arm64_raw_writel
+#define real_raw_writeq __arm64_raw_writeq
+#define real_memset_io memset_io
+#define real_memcpy_fromio memcpy_fromio
+#define real_memcpy_toio memcpy_toio
+#endif
+
 
 #define ioremap_cache ioremap_cache
 static inline void __iomem *ioremap_cache(phys_addr_t addr, size_t size)
