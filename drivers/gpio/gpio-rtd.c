@@ -527,6 +527,7 @@ static int rtd_gpio_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct gpio_irq_chip *irq_chip;
 	struct rtd_gpio *data;
+	struct resource *res;
 	int ret;
 
 	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
@@ -553,9 +554,13 @@ static int rtd_gpio_probe(struct platform_device *pdev)
 	if (IS_ERR(data->base))
 		return PTR_ERR(data->base);
 
-	data->irq_base = devm_platform_ioremap_resource(pdev, 1);
-	if (IS_ERR(data->irq_base))
-		return PTR_ERR(data->irq_base);
+	/* Interrupt mux and reset controllers share the status register window. */
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	if (!res)
+		return -EINVAL;
+	data->irq_base = devm_ioremap(dev, res->start, resource_size(res));
+	if (!data->irq_base)
+		return -ENOMEM;
 
 	data->gpio_chip.label = dev_name(dev);
 	data->gpio_chip.base = -1;
