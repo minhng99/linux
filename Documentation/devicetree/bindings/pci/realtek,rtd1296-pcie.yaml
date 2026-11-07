@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/pci/realtek,rtd1296-pcie.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 PCIe host controllers
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description: |
+  Each controller accesses endpoint memory through a bank-selected 2 KiB
+  CPU aperture. Its ranges entry describes this aperture and the initial
+  PCI address. The dedicated PHY is programmed through the controller.
+
+allOf:
+  - $ref: /schemas/pci/pci-host-bridge.yaml#
+
+properties:
+  compatible:
+    enum:
+      - realtek,rtd1296-pcie-gen1
+      - realtek,rtd1296-pcie-gen2
+
+  reg:
+    items:
+      - description: Controller and application registers.
+      - description: Bank-selected endpoint memory aperture.
+
+  clocks:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  interrupt-names:
+    items:
+      - const: msi
+
+  msi-controller: true
+
+  "#msi-cells":
+    const: 0
+
+  resets:
+    maxItems: 8
+
+  reset-names:
+    items:
+      - const: stitch
+      - const: main
+      - const: core
+      - const: power
+      - const: non-stitch
+      - const: phy
+      - const: mdio
+      - const: serdes
+
+  reset-gpios:
+    maxItems: 1
+    description: Endpoint PERST# signal.
+
+  realtek,sds:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: Shared PCIe SerDes calibration register block.
+
+  realtek,sb2:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: System bridge containing the chip revision register.
+
+  bus-range:
+    items:
+      - const: 0
+      - const: 0
+
+  ranges:
+    maxItems: 1
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - resets
+  - reset-names
+  - reset-gpios
+  - ranges
+  - dma-ranges
+  - bus-range
+  - realtek,sds
+  - realtek,sb2
+  - interrupt-map
+  - interrupt-map-mask
+
+dependentRequired:
+  msi-controller:
+    - interrupts
+    - interrupt-names
+    - "#msi-cells"
+
+unevaluatedProperties: false
