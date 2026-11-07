@@ -243,6 +243,31 @@
 		realtek,sb2 = <&sb2>;
 		status = "disabled";
 	};
+
+	gmac: ethernet@16000 {
+		compatible = "realtek,rtd1296-gmac";
+		reg = <0x16000 0x1000>;
+		interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&iso_clk RTD1296_ISO_CLK_EN_ETN_250M>,
+			 <&iso_clk RTD1296_ISO_CLK_EN_ETN_SYS>;
+		clock-names = "mac", "bus";
+		resets = <&iso_reset RTD1295_ISO_RSTN_GMAC>,
+			 <&iso_reset RTD1295_ISO_RSTN_GPHY>;
+		reset-names = "gmac", "gphy";
+		realtek,iso = <&iso>;
+		phy-mode = "internal";
+		phy-handle = <&gphy>;
+		status = "disabled";
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gphy: ethernet-phy@0 {
+				reg = <0>;
+			};
+		};
+	};
 };
 
 &uart0 {
