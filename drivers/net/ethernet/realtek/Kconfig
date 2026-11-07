@@ -6,7 +6,7 @@
 config NET_VENDOR_REALTEK
 	bool "Realtek devices"
 	default y
-	depends on PCI
+	depends on PCI || ARCH_REALTEK || COMPILE_TEST
 	help
 	  If you have a network (Ethernet) card belonging to this class, say Y.
 
@@ -16,6 +16,21 @@ config NET_VENDOR_REALTEK
 	  your specific card in the following questions.
 
 if NET_VENDOR_REALTEK
+
+config RTD1296_GMAC
+	tristate "Realtek RTD1296 integrated Gigabit Ethernet"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on OF && HAS_DMA
+	select CRC32
+	select MFD_SYSCON
+	select OF_MDIO
+	select PAGE_POOL
+	select PHYLIB
+	help
+	  Support the integrated Gigabit MAC and internal PHY on RTD1296.
+	  The module is called rtd1296-gmac.
+	  NAPI and page-pool manage receive buffers through the DMA API.
+	  The internal MDIO interface controls the integrated PHY.
 
 config 8139CP
 	tristate "RealTek RTL-8139 C+ PCI Fast Ethernet Adapter support"
