@@ -520,6 +520,7 @@ static const struct irq_chip rtd_gpio_irq_chip = {
 	.irq_disable = rtd_gpio_disable_irq,
 	.irq_set_type = rtd_gpio_irq_set_type,
 	.flags = IRQCHIP_IMMUTABLE,
+	GPIOCHIP_IRQ_RESOURCE_HELPERS,
 };
 
 static int rtd_gpio_probe(struct platform_device *pdev)
