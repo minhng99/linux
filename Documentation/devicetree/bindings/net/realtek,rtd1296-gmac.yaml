@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/realtek,rtd1296-gmac.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 integrated Gigabit Ethernet MAC
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+allOf:
+  - $ref: ethernet-controller.yaml#
+
+properties:
+  compatible:
+    const: realtek,rtd1296-gmac
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    maxItems: 2
+
+  clock-names:
+    items:
+      - const: mac
+      - const: bus
+
+  resets:
+    maxItems: 2
+
+  reset-names:
+    items:
+      - const: gmac
+      - const: gphy
+
+  realtek,iso:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: Isolation control register block.
+
+  phy-mode:
+    const: internal
+
+  phy-handle: true
+
+  mdio:
+    $ref: mdio.yaml#
+    unevaluatedProperties: false
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - realtek,iso
+  - phy-mode
+  - phy-handle
+  - mdio
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/realtek,rtd1296-clk.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+    #include <dt-bindings/reset/realtek,rtd1295.h>
+
+    ethernet@98016000 {
+        compatible = "realtek,rtd1296-gmac";
+        reg = <0x98016000 0x1000>;
+        interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&iso_clk RTD1296_ISO_CLK_EN_ETN_250M>,
+                 <&iso_clk RTD1296_ISO_CLK_EN_ETN_SYS>;
+        clock-names = "mac", "bus";
+        resets = <&iso_reset RTD1295_ISO_RSTN_GMAC>,
+                 <&iso_reset RTD1295_ISO_RSTN_GPHY>;
+        reset-names = "gmac", "gphy";
+        realtek,iso = <&iso>;
+        phy-mode = "internal";
+        phy-handle = <&gphy>;
+
+        mdio {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            gphy: ethernet-phy@0 {
+                reg = <0>;
+            };
+        };
+    };
