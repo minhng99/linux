@@ -670,7 +670,7 @@ static void rtk_phy_toggle(struct rtk_phy *rtk_phy, bool connect, int port)
 {
 	int index = port;
 
-	if (index > rtk_phy->num_phy) {
+	if (index < 0 || index >= rtk_phy->num_phy) {
 		dev_err(rtk_phy->dev, "%s: The port=%d is not in usb phy (num_phy=%d)\n",
 			__func__, index, rtk_phy->num_phy);
 		return;
