@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/phy/realtek,rtd1296-sata-phy.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 SATA PHYs
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+properties:
+  compatible:
+    const: realtek,rtd1296-sata-phy
+
+  reg:
+    maxItems: 1
+
+  '#phy-cells':
+    const: 1
+    description: SATA port index, zero or one.
+
+  clocks:
+    maxItems: 2
+
+  clock-names:
+    items:
+      - const: port0
+      - const: port1
+
+  resets:
+    maxItems: 3
+
+  reset-names:
+    items:
+      - const: serdes
+      - const: port0
+      - const: port1
+
+  realtek,sb2:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: System bridge register block containing SATA OOB control.
+
+required:
+  - compatible
+  - reg
+  - '#phy-cells'
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - realtek,sb2
+
+additionalProperties: false
