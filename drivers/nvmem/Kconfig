@@ -411,6 +411,16 @@ config NVMEM_RCAR_EFUSE
 	  This driver can also be built as a module. If so, the module
 	  will be called nvmem-rcar-efuse.
 
+config NVMEM_RTD1296_EFUSE
+	tristate "Realtek RTD1296 eFuse readout"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on HAS_IOMEM
+	help
+	  Read the eFuse data aperture on the Realtek RTD1296 through NVMEM.
+	  The driver provides byte access and does not program eFuses.
+	  The data is exposed through a root-only NVMEM provider.
+	  Select M to build the rtd1296-efuse module.
+
 config NVMEM_RMEM
 	tristate "Reserved Memory Based Driver Support"
 	depends on HAS_IOMEM

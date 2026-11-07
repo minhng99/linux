@@ -70,6 +70,7 @@ nvmem-rave-sp-eeprom-y			:= rave-sp-eeprom.o
 obj-$(CONFIG_NVMEM_RCAR_EFUSE)		+= nvmem-rcar-efuse.o
 nvmem-rcar-efuse-y			:= rcar-efuse.o
 obj-$(CONFIG_NVMEM_RMEM) 		+= nvmem-rmem.o
+obj-$(CONFIG_NVMEM_RTD1296_EFUSE)	+= rtd1296-efuse.o
 nvmem-rmem-y				:= rmem.o
 obj-$(CONFIG_NVMEM_ROCKCHIP_EFUSE)	+= nvmem_rockchip_efuse.o
 nvmem_rockchip_efuse-y			:= rockchip-efuse.o
