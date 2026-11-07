@@ -489,6 +489,29 @@
 			reset-names = "tve", "domain";
 		};
 	};
+
+	gpu: gpu@50000 {
+		compatible = "realtek,rtd1296-mali", "arm,mali-t820";
+		reg = <0x50000 0x4000>;
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "job", "mmu", "gpu";
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_GPU>;
+		clock-names = "core";
+		power-domains = <&gpu_power>;
+		status = "disabled";
+	};
+
+	gpu_power: power-controller@54000 {
+		compatible = "realtek,rtd1296-gpu-power";
+		reg = <0x54000 0x100>;
+		realtek,crt = <&crt>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_GPU>;
+		resets = <&reset1 RTD1295_RSTN_GPU>;
+		#power-domain-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &uart0 {

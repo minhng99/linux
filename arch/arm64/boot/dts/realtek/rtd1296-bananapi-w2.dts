@@ -574,3 +574,12 @@
 &tve {
 	status = "okay";
 };
+
+&gpu {
+	mali-supply = <&vdd_gpu>;
+	status = "okay";
+};
+
+&gpu_power {
+	status = "okay";
+};
