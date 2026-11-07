@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mmc/realtek,rtd1296-sdmmc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 SD card controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+allOf:
+  - $ref: mmc-controller.yaml#
+
+properties:
+  compatible:
+    const: realtek,rtd1296-sdmmc
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    maxItems: 2
+
+  clock-names:
+    items:
+      - const: biu
+      - const: ciu
+
+  resets:
+    maxItems: 1
+
+  realtek,sb2:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: System bridge register block for transaction synchronization.
+
+  bus-width:
+    enum: [1, 4]
+
+  vmmc-supply: true
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - realtek,sb2
+  - vmmc-supply
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/realtek,rtd1296-clk.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+    #include <dt-bindings/reset/realtek,rtd1295.h>
+
+    mmc@98010400 {
+        compatible = "realtek,rtd1296-sdmmc";
+        reg = <0x98010400 0x200>;
+        interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&crt_clk RTD1296_CRT_CLK_EN_CR>,
+                 <&crt_clk RTD1296_CRT_CLK_EN_SD_IP>;
+        clock-names = "biu", "ciu";
+        resets = <&reset2 RTD1295_RSTN_CR>;
+        realtek,sb2 = <&sb2>;
+        vmmc-supply = <&sd_supply>;
+        bus-width = <4>;
+        max-frequency = <25000000>;
+        no-1-8-v;
+    };
