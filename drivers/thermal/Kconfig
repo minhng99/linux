@@ -17,6 +17,17 @@ menuconfig THERMAL
 
 if THERMAL
 
+config RTD1296_THERMAL
+	tristate "Realtek RTD1296 thermal sensor"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on OF
+	select THERMAL_OF
+	help
+	  Enable the thermal sensor on Realtek RTD1296 processors,
+	  including conversion recovery after resume.
+	  The sensor reports temperatures through the thermal framework.
+	  Thermal zones can use it for CPU cooling and shutdown trips.
+
 config THERMAL_NETLINK
 	bool "Thermal netlink management"
 	depends on NET
