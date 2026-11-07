@@ -415,6 +415,37 @@
 			};
 		};
 	};
+
+	sata_phy: phy@3ff60 {
+		compatible = "realtek,rtd1296-sata-phy";
+		reg = <0x3ff60 0x10>;
+		#phy-cells = <1>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_SATA_ALIVE0>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_SATA_ALIVE1>;
+		clock-names = "port0", "port1";
+		resets = <&reset2 RTD1295_RSTN_SDS_PHY>,
+			 <&reset1 RTD1295_RSTN_SATA_PHY_POW_0>,
+			 <&reset4 RTD1295_RSTN_SATA_PHY_POW_1>;
+		reset-names = "serdes", "port0", "port1";
+		realtek,sb2 = <&sb2>;
+		status = "disabled";
+	};
+
+	sata: sata@3f000 {
+		compatible = "realtek,rtd1296-ahci", "generic-ahci";
+		reg = <0x3f000 0x200>;
+		interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_SATA0>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_SATA1>;
+		resets = <&reset1 RTD1295_RSTN_SATA_0>,
+			 <&reset1 RTD1295_RSTN_SATA_PHY_0>,
+			 <&reset4 RTD1295_RSTN_SATA_1>,
+			 <&reset4 RTD1295_RSTN_SATA_PHY_1>;
+		ports-implemented = <3>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &uart0 {
