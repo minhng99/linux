@@ -27,6 +27,10 @@
 		mmc1 = &sd;
 		ethernet0 = &gmac;
 		ethernet1 = &swnic;
+		usb0 = &ehci;
+		usb1 = &typec_host;
+		usb2 = &usb2_host;
+		usb3 = &usb3_host;
 	};
 
 	chosen {
@@ -185,6 +189,36 @@
 		startup-delay-us = <10000>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&sd_power_pins>;
+	};
+
+	usb2_supply: regulator-usb2 {
+		compatible = "regulator-fixed";
+		regulator-name = "usb2-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&misc_gpio 18 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		startup-delay-us = <100000>;
+	};
+
+	usb3_supply: regulator-usb3 {
+		compatible = "regulator-fixed";
+		regulator-name = "usb3-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&misc_gpio 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		startup-delay-us = <100000>;
+	};
+
+	typec_supply: regulator-typec {
+		compatible = "regulator-fixed";
+		regulator-name = "typec-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&iso_gpio 1 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		startup-delay-us = <1000>;
 	};
 };
 
@@ -418,5 +452,36 @@
 		rgmii0_phy: ethernet-phy@1 {
 			reg = <1>;
 		};
+	};
+};
+
+&usb {
+	usb2-vbus-supply = <&usb2_supply>;
+	status = "okay";
+};
+
+&usb3_wrapper {
+	vbus-supply = <&usb3_supply>;
+};
+
+&usb3_phy {
+	realtek,amplitude-control-coarse-tuning = <0x24>;
+	realtek,amplitude-control-fine-tuning = <0x284a>;
+};
+
+&usb3_usb2_phy {
+	realtek,driving-level = <6>;
+};
+
+&typec {
+	vbus-supply = <&typec_supply>;
+	realtek,rd-ctrl-gpios = <&iso_gpio 34 GPIO_ACTIVE_HIGH>;
+
+	connector {
+		compatible = "usb-c-connector";
+		power-role = "source";
+		data-role = "host";
+		typec-power-opmode = "default";
+		pd-disable;
 	};
 };
