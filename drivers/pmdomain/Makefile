@@ -8,6 +8,7 @@ obj-y					+= imx/
 obj-y					+= marvell/
 obj-y					+= mediatek/
 obj-y					+= qcom/
+obj-y					+= realtek/
 obj-y					+= renesas/
 obj-y					+= rockchip/
 obj-y					+= samsung/
