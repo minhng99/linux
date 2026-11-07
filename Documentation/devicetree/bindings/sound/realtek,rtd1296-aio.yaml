@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/sound/realtek,rtd1296-aio.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 audio input controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description: |
+  The controller contains an integrated stereo microphone ADC and input DMA.
+  DAI 0 provides CPU DMA and DAI 1 provides the microphone ADC.
+
+allOf:
+  - $ref: dai-common.yaml#
+
+properties:
+  compatible:
+    const: realtek,rtd1296-aio
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    maxItems: 7
+
+  clock-names:
+    items:
+      - const: bus
+      - const: codec
+      - const: mod
+      - const: da
+      - const: i2s
+      - const: mclk
+      - const: pcm
+
+  resets:
+    maxItems: 1
+
+  reset-names:
+    items:
+      - const: aio
+
+  power-domains:
+    maxItems: 1
+
+  '#sound-dai-cells':
+    const: 1
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - power-domains
+  - '#sound-dai-cells'
+
+unevaluatedProperties: false
