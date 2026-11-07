@@ -59,6 +59,10 @@ properties:
     $ref: /schemas/clock/realtek,rtd1296-clk.yaml#
     type: object
 
+  power-controller:
+    $ref: /schemas/power/realtek,rtd1296-nat-sram-power.yaml#
+    type: object
+
 patternProperties:
   '@[0-9a-f]+$':
     type: object
@@ -99,5 +103,15 @@ allOf:
       else:
         properties:
           clock-controller: false
+
+  - if:
+      not:
+        properties:
+          compatible:
+            contains:
+              const: realtek,rtd1296-crt
+    then:
+      properties:
+        power-controller: false
 
 additionalProperties: false
