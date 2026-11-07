@@ -961,6 +961,18 @@ config SPI_RPCIF
 	help
 	  SPI driver for Renesas R-Car Gen3 or RZ/G2 RPC-IF.
 
+config SPI_RTD1296_SFC
+	tristate "Realtek RTD1296 serial flash controller"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on OF
+	select MFD_SYSCON
+	select SPI_MEM
+	help
+	  Support the single-lane serial flash controller on Realtek RTD1296.
+	  Flash commands use the CPU aperture with bounded serial clock rates.
+	  The spi-mem interface supports standard single-lane NOR operations.
+	  Select M to build the spi-rtd1296-sfc module.
+
 config SPI_RSPI
 	tristate "Renesas RSPI/QSPI controller"
 	depends on SUPERH || ARCH_RENESAS || COMPILE_TEST
