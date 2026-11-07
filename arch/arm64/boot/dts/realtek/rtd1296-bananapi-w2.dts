@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+/*
+ * Banana Pi BPI-W2
+ */
+
+/dts-v1/;
+
+#include "rtd1296.dtsi"
+
+/ {
+	compatible = "bananapi,bpi-w2", "realtek,rtd1296";
+	model = "Banana Pi BPI-W2";
+
+	memory@1f000 {
+		device_type = "memory";
+		reg = <0x1f000 0x7ffe1000>;
+	};
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
