@@ -59,6 +59,12 @@ struct logic_iomem_region_ops {
 int logic_iomem_add_region(struct resource *resource,
 			   const struct logic_iomem_region_ops *ops);
 
+/* Allocate and register an address range within the supplied resource limits. */
+int logic_iomem_alloc_region(struct resource *resource,
+			     const struct logic_iomem_region_ops *ops,
+			     resource_size_t size, resource_size_t minimum,
+			     resource_size_t maximum, resource_size_t alignment);
+
 /* Consumers must release mappings and child resources before unregistering. */
 int logic_iomem_remove_region(struct resource *resource);
 

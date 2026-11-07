@@ -31,37 +31,73 @@ static DEFINE_MUTEX(regions_mtx);
 static LIST_HEAD(regions_list);
 static struct logic_iomem_area mapped_areas[MAX_AREAS];
 
+static struct logic_iomem_region *
+logic_iomem_new_region(struct resource *resource,
+		       const struct logic_iomem_region_ops *ops)
+{
+	struct logic_iomem_region *region;
+
+	if (WARN_ON(!resource || !ops))
+		return ERR_PTR(-EINVAL);
+	if (WARN_ON((resource->flags & IORESOURCE_TYPE_BITS) != IORESOURCE_MEM))
+		return ERR_PTR(-EINVAL);
+	region = kzalloc_obj(*region);
+	if (!region)
+		return ERR_PTR(-ENOMEM);
+	region->res = resource;
+	region->ops = ops;
+	return region;
+}
+
+static void logic_iomem_publish_region(struct logic_iomem_region *region)
+{
+	mutex_lock(&regions_mtx);
+	list_add_tail(&region->list, &regions_list);
+	mutex_unlock(&regions_mtx);
+}
+
 int logic_iomem_add_region(struct resource *resource,
 			   const struct logic_iomem_region_ops *ops)
 {
-	struct logic_iomem_region *rreg;
-	int err;
+	struct logic_iomem_region *region;
+	int ret;
 
-	if (WARN_ON(!resource || !ops))
-		return -EINVAL;
-
-	if (WARN_ON((resource->flags & IORESOURCE_TYPE_BITS) != IORESOURCE_MEM))
-		return -EINVAL;
-
-	rreg = kzalloc_obj(*rreg);
-	if (!rreg)
-		return -ENOMEM;
-
-	err = request_resource(&iomem_resource, resource);
-	if (err) {
-		kfree(rreg);
+	region = logic_iomem_new_region(resource, ops);
+	if (IS_ERR(region))
+		return PTR_ERR(region);
+	ret = request_resource(&iomem_resource, resource);
+	if (ret) {
+		kfree(region);
 		return -ENOMEM;
 	}
-
-	mutex_lock(&regions_mtx);
-	rreg->res = resource;
-	rreg->ops = ops;
-	list_add_tail(&rreg->list, &regions_list);
-	mutex_unlock(&regions_mtx);
-
+	logic_iomem_publish_region(region);
 	return 0;
 }
 EXPORT_SYMBOL(logic_iomem_add_region);
+
+int logic_iomem_alloc_region(struct resource *resource,
+			     const struct logic_iomem_region_ops *ops,
+			     resource_size_t size, resource_size_t minimum,
+			     resource_size_t maximum, resource_size_t alignment)
+{
+	struct logic_iomem_region *region;
+	int ret;
+
+	if (!size)
+		return -EINVAL;
+	region = logic_iomem_new_region(resource, ops);
+	if (IS_ERR(region))
+		return PTR_ERR(region);
+	ret = allocate_resource(&iomem_resource, resource, size, minimum, maximum,
+				alignment, NULL, NULL);
+	if (ret) {
+		kfree(region);
+		return ret;
+	}
+	logic_iomem_publish_region(region);
+	return 0;
+}
+EXPORT_SYMBOL_GPL(logic_iomem_alloc_region);
 
 int logic_iomem_remove_region(struct resource *resource)
 {
