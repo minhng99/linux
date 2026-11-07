@@ -19,6 +19,7 @@ properties:
     items:
       - enum:
           - realtek,rtd1295-dwc3
+          - realtek,rtd1296-dwc3
           - realtek,rtd1315e-dwc3
           - realtek,rtd1319-dwc3
           - realtek,rtd1319d-dwc3
@@ -28,6 +29,7 @@ properties:
       - const: realtek,rtd-dwc3
 
   reg:
+    minItems: 1
     items:
       - description: Address and length of register set for wrapper of dwc3 core.
       - description: Address and length of register set for pm control.
@@ -40,6 +42,8 @@ properties:
 
   ranges: true
 
+  vbus-supply: true
+
 patternProperties:
   "^usb@[0-9a-f]+$":
     $ref: snps,dwc3.yaml#
@@ -51,6 +55,21 @@ required:
   - "#address-cells"
   - "#size-cells"
   - ranges
+
+allOf:
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: realtek,rtd1296-dwc3
+    then:
+      properties:
+        reg:
+          maxItems: 1
+    else:
+      properties:
+        reg:
+          minItems: 2
 
 additionalProperties: false
 

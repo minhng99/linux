@@ -18,6 +18,7 @@ properties:
   compatible:
     enum:
       - realtek,rtd1295-type-c
+      - realtek,rtd1296-type-c
       - realtek,rtd1312c-type-c
       - realtek,rtd1315e-type-c
       - realtek,rtd1319-type-c
@@ -46,6 +47,8 @@ properties:
   realtek,rd-ctrl-gpios:
     description: The gpio node to control external Rd on board.
     maxItems: 1
+
+  vbus-supply: true
 
   connector:
     $ref: /schemas/connector/usb-connector.yaml#

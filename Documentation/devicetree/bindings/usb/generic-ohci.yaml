@@ -52,6 +52,7 @@ properties:
           - const: generic-ohci
       - enum:
           - generic-ohci
+          - realtek,rtd1296-ohci
           - ti,ohci-omap3
       - items:
           - enum:
