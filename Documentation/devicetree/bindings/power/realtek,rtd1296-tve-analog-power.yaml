@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/power/realtek,rtd1296-tve-analog-power.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 TVE analogue power controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description: |
+  The microphone ADC requires the TVE analogue enable.
+  The controller is a child of the TVE system controller.
+
+properties:
+  compatible:
+    const: realtek,rtd1296-tve-analog-power
+
+  reg:
+    maxItems: 1
+
+  clocks:
+    maxItems: 1
+
+  resets:
+    items:
+      - description: Shared TVE reset
+      - description: Shared display-domain reset
+
+  reset-names:
+    items:
+      - const: tve
+      - const: domain
+
+  '#power-domain-cells':
+    const: 0
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - resets
+  - reset-names
+  - '#power-domain-cells'
+
+additionalProperties: false
