@@ -1,4 +1,16 @@
 # SPDX-License-Identifier: GPL-2.0-only
+config REALTEK_RTD1296_GPU_POWER
+	bool "Realtek RTD1296 GPU power domain"
+	depends on (ARCH_REALTEK || COMPILE_TEST) && OF && PM
+	depends on COMMON_CLK && RESET_CONTROLLER
+	select MFD_SYSCON
+	select PM_GENERIC_DOMAINS
+	help
+	  Control the GPU SRAM and memory-repair interface.
+	  Sequence its clock and reset around power transitions.
+	  Poll SRAM and repair completion before exposing the device.
+	  Runtime PM powers down SRAM when the consumer becomes idle.
+
 config REALTEK_RTD1296_TVE_POWER
 	bool "Realtek RTD1296 TVE analogue power domain"
 	depends on (ARCH_REALTEK || COMPILE_TEST) && OF && PM
