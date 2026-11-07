@@ -658,6 +658,26 @@ static const struct phy_cfg rtd1619_phy_cfg = {
 	.check_rx_front_end_offset = false,
 };
 
+static const struct phy_cfg rtd1296_phy_cfg = {
+	.param_size = MAX_USB_PHY_DATA_SIZE,
+	.param = {
+		[0x00] = {0x00, 0x4008},
+		[0x01] = {0x01, 0xe046},
+		[0x03] = {0x03, 0x2779},
+		[0x06] = {0x06, 0x000e},
+		[0x09] = {0x09, 0x525c},
+		[0x0a] = {0x0a, 0xa600},
+		[0x0b] = {0x0b, 0xa904},
+		[0x19] = {0x19, 0x4004},
+		[0x1f] = {0x1f, 0x2807},
+		[0x20] = {0x20, 0x947a},
+		[0x21] = {0x21, 0x88aa},
+		[0x28] = {0x28, 0xf8c2},
+		[0x2f] = {0x2f, 0x0040},
+	},
+	.do_toggle = true,
+};
+
 static const struct phy_cfg rtd1319_phy_cfg = {
 	.param_size = MAX_USB_PHY_DATA_SIZE,
 	.param = {  [1] = {0x01, 0xac86},
@@ -726,6 +746,7 @@ static const  struct phy_cfg rtd1319d_phy_cfg = {
 
 static const struct of_device_id usbphy_rtk_dt_match[] = {
 	{ .compatible = "realtek,rtd1295-usb3phy", .data = &rtd1295_phy_cfg },
+	{ .compatible = "realtek,rtd1296-usb3phy", .data = &rtd1296_phy_cfg },
 	{ .compatible = "realtek,rtd1319-usb3phy", .data = &rtd1319_phy_cfg },
 	{ .compatible = "realtek,rtd1319d-usb3phy", .data = &rtd1319d_phy_cfg },
 	{ .compatible = "realtek,rtd1619-usb3phy", .data = &rtd1619_phy_cfg },

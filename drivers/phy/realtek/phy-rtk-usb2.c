@@ -1183,6 +1183,27 @@ static const struct phy_cfg rtd1319_phy_cfg = {
 	.is_double_sensitivity_mode = true,
 };
 
+static const struct phy_cfg rtd1296_phy_cfg = {
+	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
+	.page0 = {
+		[0] = {0xe0, 0xe0},
+		[2] = {0xe2, 0x3a},
+		[4] = {0xe4, 0xa8},
+		[6] = {0xe6, 0x91},
+		[13] = {0xf5, 0x81},
+		[15] = {0xf7, 0x02},
+	},
+	.page1_size = 8,
+	.num_phy = 1,
+	.check_efuse_version = CHECK_EFUSE_V1,
+	.efuse_dc_driving_rate = 1,
+	.dc_driving_mask = 0xf,
+	.efuse_dc_disconnect_rate = 1,
+	.dc_disconnect_mask = 0xf,
+	.usb_dc_disconnect_at_page0 = true,
+	.do_toggle = true,
+};
+
 static const struct phy_cfg rtd1312c_phy_cfg = {
 	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
 	.page0 = { [0] = {0xe0, 0x14},
@@ -1286,6 +1307,7 @@ static const struct phy_cfg rtd1315e_phy_cfg = {
 
 static const struct of_device_id usbphy_rtk_dt_match[] = {
 	{ .compatible = "realtek,rtd1295-usb2phy", .data = &rtd1295_phy_cfg },
+	{ .compatible = "realtek,rtd1296-usb2phy", .data = &rtd1296_phy_cfg },
 	{ .compatible = "realtek,rtd1312c-usb2phy", .data = &rtd1312c_phy_cfg },
 	{ .compatible = "realtek,rtd1315e-usb2phy", .data = &rtd1315e_phy_cfg },
 	{ .compatible = "realtek,rtd1319-usb2phy", .data = &rtd1319_phy_cfg },
