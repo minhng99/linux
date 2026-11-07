@@ -23,6 +23,17 @@ config PINCTRL_RTD1315E
 	depends on PINCTRL_RTD
 	default ARCH_REALTEK
 
+config PINCTRL_RTD1296
+	tristate "Realtek DHC RTD1296 pin controller driver"
+	depends on PINCTRL_RTD
+	help
+	  This driver enables support for the pin controller on the Realtek
+	  RTD1296 SoC.
+
+	  It implements pin multiplexing for function selection and GPIO
+	  enabling, and uses the generic pin configuration interface for pull
+	  resistors, drive strength and Schmitt trigger settings.
+
 config PINCTRL_RTD1625
 	tristate "Realtek DHC 1625 pin controller driver"
 	depends on PINCTRL_RTD
