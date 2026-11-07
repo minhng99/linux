@@ -76,6 +76,9 @@ static int probe(struct pci_dev *pdev,
 	int err;
 	int i;
 
+	if (pdev->non_mappable_bars)
+		return -EOPNOTSUPP;
+
 	err = pcim_enable_device(pdev);
 	if (err) {
 		dev_err(&pdev->dev, "%s: pci_enable_device failed: %d\n",
