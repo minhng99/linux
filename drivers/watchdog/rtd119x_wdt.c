@@ -8,6 +8,7 @@
 
 #include <linux/bitops.h>
 #include <linux/clk.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
@@ -28,6 +29,7 @@ struct rtd119x_watchdog_device {
 	struct watchdog_device wdt_dev;
 	void __iomem *base;
 	struct clk *clk;
+	u32 restart_count;
 };
 
 static int rtd119x_wdt_start(struct watchdog_device *wdev)
@@ -76,17 +78,33 @@ static int rtd119x_wdt_set_timeout(struct watchdog_device *wdev, unsigned int va
 	return 0;
 }
 
+static int rtd119x_wdt_restart(struct watchdog_device *wdev,
+			       unsigned long action, void *cmd)
+{
+	struct rtd119x_watchdog_device *data = watchdog_get_drvdata(wdev);
+
+	/* Let the watchdog overflow after 100 ms. */
+	writel_relaxed(RTD119X_TCWTR_WDCLR, data->base + RTD119X_TCWTR);
+	writel(data->restart_count, data->base + RTD119X_TCWOV);
+	rtd119x_wdt_start(wdev);
+
+	mdelay(1000);
+
+	return 0;
+}
+
 static const struct watchdog_ops rtd119x_wdt_ops = {
 	.owner = THIS_MODULE,
 	.start		= rtd119x_wdt_start,
 	.stop		= rtd119x_wdt_stop,
 	.ping		= rtd119x_wdt_ping,
 	.set_timeout	= rtd119x_wdt_set_timeout,
+	.restart	= rtd119x_wdt_restart,
 };
 
 static const struct watchdog_info rtd119x_wdt_info = {
 	.identity = "rtd119x-wdt",
-	.options = 0,
+	.options = WDIOF_SETTIMEOUT | WDIOF_KEEPALIVEPING | WDIOF_MAGICCLOSE,
 };
 
 static const struct of_device_id rtd119x_wdt_dt_ids[] = {
@@ -113,8 +131,9 @@ static int rtd119x_wdt_probe(struct platform_device *pdev)
 		return PTR_ERR(data->clk);
 
 	rate = clk_get_rate(data->clk);
-	if (!rate)
+	if (!rate || rate > U32_MAX)
 		return -EINVAL;
+	data->restart_count = max(1UL, rate / 10);
 
 	data->wdt_dev.info = &rtd119x_wdt_info;
 	data->wdt_dev.ops = &rtd119x_wdt_ops;
@@ -124,6 +143,7 @@ static int rtd119x_wdt_probe(struct platform_device *pdev)
 	data->wdt_dev.parent = dev;
 
 	watchdog_stop_on_reboot(&data->wdt_dev);
+	watchdog_set_restart_priority(&data->wdt_dev, 128);
 	watchdog_set_drvdata(&data->wdt_dev, data);
 	platform_set_drvdata(pdev, data);
 
