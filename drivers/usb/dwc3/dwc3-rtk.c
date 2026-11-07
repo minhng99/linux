@@ -10,6 +10,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
+#include <linux/regulator/consumer.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/suspend.h>
@@ -60,7 +61,23 @@ struct dwc3_rtk {
 
 	enum usb_role cur_role;
 	struct usb_role_switch *role_switch;
+	struct regulator *vbus;
+	bool vbus_enabled;
 };
+
+static void dwc3_rtk_disable_vbus(void *data)
+{
+	struct dwc3_rtk *rtk = data;
+	int ret;
+
+	if (!rtk->vbus_enabled)
+		return;
+	ret = regulator_disable(rtk->vbus);
+	if (ret)
+		dev_err(rtk->dev, "Cannot disable VBUS: %d\n", ret);
+	else
+		rtk->vbus_enabled = false;
+}
 
 static void switch_usb2_role(struct dwc3_rtk *rtk, enum usb_role role)
 {
@@ -358,6 +375,7 @@ static int dwc3_rtk_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct resource *res;
 	void __iomem *regs;
+	int ret;
 
 	rtk = devm_kzalloc(dev, sizeof(*rtk), GFP_KERNEL);
 	if (!rtk)
@@ -381,6 +399,21 @@ static int dwc3_rtk_probe(struct platform_device *pdev)
 			return PTR_ERR(rtk->pm_base);
 	}
 
+	rtk->vbus = devm_regulator_get_optional(dev, "vbus");
+	if (IS_ERR(rtk->vbus)) {
+		ret = PTR_ERR(rtk->vbus);
+		if (ret != -ENODEV)
+			return dev_err_probe(dev, ret, "Cannot get VBUS supply\n");
+		rtk->vbus = NULL;
+	} else {
+		ret = regulator_enable(rtk->vbus);
+		if (ret)
+			return dev_err_probe(dev, ret, "Cannot enable VBUS\n");
+		rtk->vbus_enabled = true;
+		ret = devm_add_action_or_reset(dev, dwc3_rtk_disable_vbus, rtk);
+		if (ret)
+			return ret;
+	}
 	return dwc3_rtk_probe_dwc3_core(rtk);
 }
 
@@ -400,6 +433,7 @@ static void dwc3_rtk_shutdown(struct platform_device *pdev)
 	struct dwc3_rtk *rtk = platform_get_drvdata(pdev);
 
 	of_platform_depopulate(rtk->dev);
+	dwc3_rtk_disable_vbus(rtk);
 }
 
 static const struct of_device_id rtk_dwc3_match[] = {
