@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mmc/realtek,rtd1296-dw-mshc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 eMMC controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+allOf:
+  - $ref: mmc-controller.yaml#
+
+properties:
+  compatible:
+    const: realtek,rtd1296-dw-mshc
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    items:
+      - description: Card-interface input clock
+      - description: Shared card-reader register clock
+      - description: eMMC card clock gate
+      - description: Output phase clock
+      - description: Input phase clock
+
+  clock-names:
+    items:
+      - const: ciu
+      - const: biu
+      - const: card
+      - const: ciu-drive
+      - const: ciu-sample
+
+  resets:
+    items:
+      - description: eMMC controller reset
+      - description: Shared card-reader reset
+
+  reset-names:
+    items:
+      - const: reset
+      - const: cr
+
+  fifo-depth:
+    const: 256
+
+  clk-phase-legacy: true
+
+  non-removable: true
+
+  no-sd: true
+
+  no-sdio: true
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - clk-phase-legacy
+  - non-removable
+  - no-sd
+  - no-sdio
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+
+    mmc@98012000 {
+        compatible = "realtek,rtd1296-dw-mshc";
+        reg = <0x98012000 0x600>;
+        interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&clocks 0>, <&clocks 1>, <&clocks 2>,
+                 <&clocks 3>, <&clocks 4>;
+        clock-names = "ciu", "biu", "card", "ciu-drive", "ciu-sample";
+        resets = <&resets 11>, <&resets 10>;
+        reset-names = "reset", "cr";
+        bus-width = <8>;
+        max-frequency = <25000000>;
+        clk-phase-legacy = <0 180>;
+        non-removable;
+        no-sd;
+        no-sdio;
+    };
