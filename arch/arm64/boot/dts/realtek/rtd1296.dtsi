@@ -213,6 +213,24 @@
 		compatible = "realtek,rtd1296-disp-pinctrl";
 		reg = <0x4d000 0xc>;
 	};
+
+	emmc: mmc@12000 {
+		compatible = "realtek,rtd1296-dw-mshc";
+		reg = <0x12000 0x600>;
+		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_EMMC_IP>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_CR>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_EMMC>,
+			 <&crt_clk RTD1296_CRT_CLK_EMMC_DRIVE>,
+			 <&crt_clk RTD1296_CRT_CLK_EMMC_SAMPLE>;
+		clock-names = "ciu", "biu", "card", "ciu-drive", "ciu-sample";
+		resets = <&reset2 RTD1295_RSTN_EMMC>, <&reset2 RTD1295_RSTN_CR>;
+		reset-names = "reset", "cr";
+		non-removable;
+		no-sd;
+		no-sdio;
+		status = "disabled";
+	};
 };
 
 &uart0 {

@@ -318,3 +318,24 @@
 		};
 	};
 };
+
+&cr_pinctrl {
+	emmc_pins: emmc-pins {
+		function = "emmc";
+		pins = "nf_cle", "nf_rd_n", "nf_rdy", "nf_dd_7", "nf_dd_6",
+		       "nf_dd_5", "nf_dd_4", "nf_dd_3", "nf_dd_2", "nf_dd_1",
+		       "nf_dd_0", "emmc_dd_sb";
+	};
+};
+
+&emmc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_pins>;
+	bus-width = <8>;
+	max-frequency = <26000000>;
+	clk-phase-legacy = <0 180>;
+	vmmc-supply = <&vdd_3v3>;
+	vqmmc-supply = <&vdd_1v8>;
+	disable-wp;
+	status = "okay";
+};
