@@ -446,6 +446,11 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	pcie_sds: syscon@1c600 {
+		compatible = "realtek,rtd1296-pcie-sds", "syscon";
+		reg = <0x1c600 0x100>;
+	};
 };
 
 &uart0 {
@@ -476,4 +481,80 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	pcie0: pcie@9804e000 {
+		compatible = "realtek,rtd1296-pcie-gen1";
+		reg = <0x9804e000 0x1000>, <0x9804f000 0x800>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		#interrupt-cells = <1>;
+		linux,pci-domain = <0>;
+		bus-range = <0 0>;
+		ranges = <0x02000000 0 0xc0000000 0x9804f000 0 0x800>;
+		dma-ranges = <0x02000000 0 0 0 0 0x80000000>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_PCIE0>;
+		resets = <&reset2 RTD1295_RSTN_PCIE0_STITCH>,
+			 <&reset2 RTD1295_RSTN_PCIE0>,
+			 <&reset2 RTD1295_RSTN_PCIE0_CORE>,
+			 <&reset2 RTD1295_RSTN_PCIE0_POWER>,
+			 <&reset2 RTD1295_RSTN_PCIE0_NONSTICH>,
+			 <&reset2 RTD1295_RSTN_PCIE0_PHY>,
+			 <&reset4 RTD1295_RSTN_PCIE0_PHY_MDIO>,
+			 <&reset2 RTD1295_RSTN_SDS_PHY>;
+		reset-names = "stitch", "main", "core", "power", "non-stitch",
+			      "phy", "mdio", "serdes";
+		realtek,sds = <&pcie_sds>;
+		realtek,sb2 = <&sb2>;
+		interrupt-map-mask = <0 0 0 7>;
+		interrupt-map = <0 0 0 1 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
+				<0 0 0 2 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
+				<0 0 0 3 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
+				<0 0 0 4 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+		interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "msi";
+		msi-controller;
+		#msi-cells = <0>;
+	};
+
+	pcie1: pcie@9803b000 {
+		compatible = "realtek,rtd1296-pcie-gen2";
+		reg = <0x9803b000 0x1000>, <0x9803c000 0x800>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		#interrupt-cells = <1>;
+		linux,pci-domain = <1>;
+		bus-range = <0 0>;
+		ranges = <0x02000000 0 0xc1000000 0x9803c000 0 0x800>;
+		dma-ranges = <0x02000000 0 0 0 0 0x80000000>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_PCIE1>;
+		resets = <&reset2 RTD1295_RSTN_PCIE1_STITCH>,
+			 <&reset2 RTD1295_RSTN_PCIE1>,
+			 <&reset2 RTD1295_RSTN_PCIE1_CORE>,
+			 <&reset2 RTD1295_RSTN_PCIE1_POWER>,
+			 <&reset2 RTD1295_RSTN_PCIE1_NONSTICH>,
+			 <&reset2 RTD1295_RSTN_PCIE1_PHY>,
+			 <&reset4 RTD1295_RSTN_PCIE1_PHY_MDIO>,
+			 <&reset2 RTD1295_RSTN_SDS_PHY>;
+		reset-names = "stitch", "main", "core", "power", "non-stitch",
+			      "phy", "mdio", "serdes";
+		realtek,sds = <&pcie_sds>;
+		realtek,sb2 = <&sb2>;
+		interrupt-map-mask = <0 0 0 7>;
+		interrupt-map = <0 0 0 1 &gic GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
+				<0 0 0 2 &gic GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
+				<0 0 0 3 &gic GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
+				<0 0 0 4 &gic GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+		interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "msi";
+		msi-controller;
+		#msi-cells = <0>;
+	};
+};
+
+&gic {
+	#address-cells = <0>;
 };

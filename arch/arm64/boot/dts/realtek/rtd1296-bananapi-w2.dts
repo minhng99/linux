@@ -456,6 +456,16 @@
 		       "rgmii0_txd_2", "rgmii0_txd_3";
 		slew-rate = <0>;
 	};
+
+	pcie0_reset_pins: pcie0-reset-pins {
+		pins = "sensor_cko_0";
+		function = "gpio";
+	};
+
+	pcie1_reset_pins: pcie1-reset-pins {
+		pins = "sensor_stb_0";
+		function = "gpio";
+	};
 };
 
 &swnic {
@@ -524,4 +534,18 @@
 		phys = <&sata_phy 1>;
 		target-supply = <&sata1_supply>;
 	};
+};
+
+&pcie0 {
+	reset-gpios = <&misc_gpio 16 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_reset_pins>;
+	status = "okay";
+};
+
+&pcie1 {
+	reset-gpios = <&misc_gpio 19 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_reset_pins>;
+	status = "okay";
 };
