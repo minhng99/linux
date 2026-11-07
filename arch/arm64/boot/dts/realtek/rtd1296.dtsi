@@ -451,6 +451,44 @@
 		compatible = "realtek,rtd1296-pcie-sds", "syscon";
 		reg = <0x1c600 0x100>;
 	};
+
+	aio: audio-controller@6000 {
+		compatible = "realtek,rtd1296-aio";
+		reg = <0x6000 0x1000>;
+		interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_AIO>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_AIO_CODEC>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_AIO_MOD>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_AIO_DA>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_AIO_I2S>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_AIO_MCLK>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_AIO_PCM>;
+		clock-names = "bus", "codec", "mod", "da", "i2s", "mclk", "pcm";
+		resets = <&reset1 RTD1295_RSTN_AIO>;
+		reset-names = "aio";
+		power-domains = <&tve_analog>;
+		#sound-dai-cells = <1>;
+		status = "disabled";
+	};
+
+	tve: syscon@18000 {
+		compatible = "realtek,rtd1296-tve", "syscon", "simple-mfd";
+		reg = <0x18000 0x400>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0x18000 0x400>;
+		status = "disabled";
+
+		tve_analog: power-controller@3a0 {
+			compatible = "realtek,rtd1296-tve-analog-power";
+			reg = <0x3a0 4>;
+			#power-domain-cells = <0>;
+			clocks = <&crt_clk RTD1296_CRT_CLK_EN_TVE>;
+			resets = <&reset1 RTD1295_RSTN_TVE>,
+				 <&reset4 RTD1295_RSTN_DISP>;
+			reset-names = "tve", "domain";
+		};
+	};
 };
 
 &uart0 {
