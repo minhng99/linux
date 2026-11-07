@@ -46,6 +46,17 @@ menuconfig TYPEC
 
 if TYPEC
 
+config TYPEC_RTD1296
+	tristate "Realtek RTD1296 USB Type-C source controller"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on OF && GPIOLIB && REGULATOR
+	help
+	  Control source detection, cable orientation and VBUS on the
+	  integrated RTD1296 USB Type-C controller.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called rtd1296.
+
 source "drivers/usb/typec/tcpm/Kconfig"
 
 source "drivers/usb/typec/ucsi/Kconfig"
