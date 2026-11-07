@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config COMMON_CLK_RTD1296
+	bool "Clock driver for Realtek RTD1296"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	select MFD_SYSCON
+	help
+	  Support for the CRT and ISO clock controllers of the Realtek
+	  RTD1296 SoC. They provide the PLLs and the
+	  clock gates of the on-chip peripherals.
+
+	  Say Y if you want to run Linux on this SoC.
