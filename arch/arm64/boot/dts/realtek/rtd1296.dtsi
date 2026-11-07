@@ -231,6 +231,18 @@
 		no-sdio;
 		status = "disabled";
 	};
+
+	sd: mmc@10400 {
+		compatible = "realtek,rtd1296-sdmmc";
+		reg = <0x10400 0x200>;
+		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_CR>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_SD_IP>;
+		clock-names = "biu", "ciu";
+		resets = <&reset2 RTD1295_RSTN_CR>;
+		realtek,sb2 = <&sb2>;
+		status = "disabled";
+	};
 };
 
 &uart0 {

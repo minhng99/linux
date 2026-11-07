@@ -23,6 +23,8 @@
 
 	aliases {
 		serial0 = &uart0;
+		mmc0 = &emmc;
+		mmc1 = &sd;
 	};
 
 	chosen {
@@ -169,6 +171,18 @@
 			gpios = <&misc_gpio 98 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
+	};
+
+	sd_supply: regulator-sd {
+		compatible = "regulator-fixed";
+		regulator-name = "sd-3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vdd_3v3>;
+		gpio = <&misc_gpio 99 GPIO_ACTIVE_LOW>;
+		startup-delay-us = <10000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sd_power_pins>;
 	};
 };
 
@@ -326,6 +340,17 @@
 		       "nf_dd_5", "nf_dd_4", "nf_dd_3", "nf_dd_2", "nf_dd_1",
 		       "nf_dd_0", "emmc_dd_sb";
 	};
+
+	sd_pins: sd-pins {
+		function = "sd";
+		pins = "mmc_cmd", "mmc_clk", "mmc_cd", "mmc_wp",
+		       "mmc_data_0", "mmc_data_1", "mmc_data_2", "mmc_data_3";
+	};
+
+	sd_power_pins: sd-power-pins {
+		function = "gpio";
+		pins = "prob_2";
+	};
 };
 
 &emmc {
@@ -337,5 +362,18 @@
 	vmmc-supply = <&vdd_3v3>;
 	vqmmc-supply = <&vdd_1v8>;
 	disable-wp;
+	status = "okay";
+};
+
+&sd {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sd_pins>;
+	bus-width = <4>;
+	max-frequency = <25000000>;
+	vmmc-supply = <&sd_supply>;
+	disable-wp;
+	no-1-8-v;
+	no-mmc;
+	no-sdio;
 	status = "okay";
 };
