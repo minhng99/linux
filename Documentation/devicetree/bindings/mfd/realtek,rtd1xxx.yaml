@@ -28,6 +28,7 @@ properties:
           - realtek,rtd1296-misc
           - realtek,rtd1296-sb2
           - realtek,rtd1296-scpu-wrapper
+          - realtek,rtd1296-tve
           - realtek,rtd1395-crt
           - realtek,rtd1395-iso
           - realtek,rtd1395-misc
