@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/clock/realtek,rtd1296-clk.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 clock controllers
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description: |
+  The RTD1296 SoC has clock controls spread over
+  two system controller blocks:
+
+  - The CRT block holds the PLLs, the system bus and CPU clock selection and
+    the clock enable registers of most peripherals.
+  - The ISO block, which stays powered in standby, holds the clock enable
+    register of the peripherals in the always-on domain.
+
+  Each clock controller is described as a child node of the corresponding
+  system controller (see realtek,rtd1xxx.yaml) and accesses its registers
+  through the parent.
+
+  The clock model feeds all PLLs from the 27 MHz oscillator.
+  Most gates in the CRT block are modelled as
+  children of the system bus clock, except for the GPU gate, which is fed by
+  the GPU PLL, and the MISC I2C gates, which are fed by the 27 MHz
+  oscillator. Gates in the ISO block are modelled as children of the 27 MHz
+  oscillator.
+
+  The AIO PCM clock provides the 48 kHz capture profile.
+  Audio signal gates expose enable controls without a rate parent.
+  The AIO bus gate follows the system bus clock.
+
+  See include/dt-bindings/clock/realtek,rtd1296-clk.h for the clock indices.
+
+properties:
+  compatible:
+    enum:
+      - realtek,rtd1296-crt-clk
+      - realtek,rtd1296-iso-clk
+
+  clocks:
+    items:
+      - description: 27 MHz oscillator
+
+  '#clock-cells':
+    const: 1
+
+required:
+  - compatible
+  - clocks
+  - '#clock-cells'
+
+additionalProperties: false
+
+examples:
+  - |
+    clock-controller {
+        compatible = "realtek,rtd1296-crt-clk";
+        clocks = <&osc27M>;
+        #clock-cells = <1>;
+    };
