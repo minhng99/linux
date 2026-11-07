@@ -26,6 +26,7 @@ obj-y += nvidia/
 obj-y += nxp/
 obj-y += qcom/
 obj-y += raspberrypi/
+obj-y += realtek/
 obj-y += renesas/
 obj-y += rockchip/
 obj-y += samsung/

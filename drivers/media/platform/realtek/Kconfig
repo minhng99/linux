@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config VIDEO_RTD1296_HDMIRX
+	tristate "Realtek RTD1296 HDMI receiver"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on V4L_PLATFORM_DRIVERS && VIDEO_DEV
+	depends on OF && COMMON_CLK && RESET_CONTROLLER && PM
+	depends on HAS_DMA && GPIOLIB
+	select VIDEOBUF2_DMA_CONTIG
+	help
+	  HDMI video capture through the RTD1296 receiver and capture engine.
+	  The receiver uses the V4L2 EDID and digital video timing interfaces.
+	  Buffers use the contiguous DMA allocator.
+	  The module is called rtd1296-hdmirx-driver.
