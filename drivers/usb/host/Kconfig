@@ -562,6 +562,16 @@ config USB_OHCI_HCD_PLATFORM
 
 	  If unsure, say N.
 
+config USB_OHCI_RTD1296
+	tristate "Realtek RTD1296 OHCI host support"
+	depends on USB_RTD1296
+	select USB_OHCI_LITTLE_ENDIAN
+	help
+	  Enable the RTD1296 companion controller with USB2 PHY clock wakeup
+	  before host resume.
+	  This controller provides full-speed and low-speed USB host support.
+	  Select M to build the ohci-rtd1296 module.
+
 config USB_OCTEON_OHCI
 	bool "Octeon on-chip OHCI support (DEPRECATED)"
 	depends on CAVIUM_OCTEON_SOC
@@ -705,6 +715,17 @@ config USB_HCD_SSB
 	  for ehci and ohci.
 
 	  If unsure, say N.
+
+config USB_RTD1296
+	tristate "Realtek RTD1296 USB controller clock and reset control"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on OF && COMMON_CLK && RESET_CONTROLLER && REGULATOR
+	help
+	  Enable the shared clock and reset interface for RTD1296 USB
+	  controllers and their PHYs.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called rtd1296-usb.
 
 config USB_HCD_TEST_MODE
 	bool "HCD test mode support"
