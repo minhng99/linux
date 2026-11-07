@@ -30,6 +30,7 @@ properties:
           - enum:
               - amlogic,meson-gxm-mali
               - realtek,rtd1295-mali
+              - realtek,rtd1296-mali
           - const: arm,mali-t820
       - items:
           - enum:
@@ -128,6 +129,17 @@ required:
 additionalProperties: false
 
 allOf:
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: realtek,rtd1296-mali
+    then:
+      properties:
+        resets: false
+      required:
+        - power-domains
+
   - if:
       properties:
         compatible:
