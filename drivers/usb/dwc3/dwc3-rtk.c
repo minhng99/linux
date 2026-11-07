@@ -305,8 +305,8 @@ static int dwc3_rtk_probe_dwc3_core(struct dwc3_rtk *rtk)
 	dwc3_dev = &dwc3_pdev->dev;
 	rtk->dwc = platform_get_drvdata(dwc3_pdev);
 	if (!rtk->dwc) {
-		dev_err(dev, "failed to find dwc3 core\n");
-		ret = -ENODEV;
+		dev_dbg(dev, "Waiting for the DWC3 core driver\n");
+		ret = -EPROBE_DEFER;
 		goto err_pdev_put;
 	}
 
