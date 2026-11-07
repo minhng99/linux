@@ -244,7 +244,8 @@ static struct resource virt_cfgspace_resource = {
 	.flags = IORESOURCE_MEM,
 };
 
-static long um_pci_map_cfgspace(unsigned long offset, size_t size,
+static long um_pci_map_cfgspace(struct resource *resource,
+				unsigned long offset, size_t size,
 				const struct logic_iomem_ops **ops,
 				void **priv)
 {
@@ -318,7 +319,8 @@ static int um_pci_map_iomem_walk(struct pci_dev *pdev, void *_data)
 	return 0;
 }
 
-static long um_pci_map_iomem(unsigned long offset, size_t size,
+static long um_pci_map_iomem(struct resource *resource,
+			     unsigned long offset, size_t size,
 			     const struct logic_iomem_ops **ops,
 			     void **priv)
 {
@@ -443,7 +445,8 @@ void *pci_root_bus_fwnode(struct pci_bus *bus)
 	return um_pci_fwnode;
 }
 
-static long um_pci_map_platform(unsigned long offset, size_t size,
+static long um_pci_map_platform(struct resource *resource,
+				unsigned long offset, size_t size,
 				const struct logic_iomem_ops **ops,
 				void **priv)
 {

@@ -37,7 +37,7 @@ struct logic_iomem_ops {
 
 /**
  * struct logic_iomem_region_ops - ops for an IO memory handler
- * @map: map a range in the registered IO memory region, must
+ * @map: map a range within the supplied resource, must
  *	fill *ops with the ops and may fill *priv to be passed
  *	to the ops. The offset is given as the offset into the
  *	registered resource region.
@@ -46,7 +46,7 @@ struct logic_iomem_ops {
  *	offset for later ops, to allow for partial mappings.
  */
 struct logic_iomem_region_ops {
-	long (*map)(unsigned long offset, size_t size,
+	long (*map)(struct resource *resource, unsigned long offset, size_t size,
 		    const struct logic_iomem_ops **ops,
 		    void **priv);
 };
@@ -58,5 +58,8 @@ struct logic_iomem_region_ops {
  */
 int logic_iomem_add_region(struct resource *resource,
 			   const struct logic_iomem_region_ops *ops);
+
+/* Consumers must release mappings and child resources before unregistering. */
+int logic_iomem_remove_region(struct resource *resource);
 
 #endif /* __LOGIC_IOMEM_H */

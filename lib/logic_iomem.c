@@ -9,12 +9,13 @@
 #include <asm/io.h>
 
 struct logic_iomem_region {
-	const struct resource *res;
+	struct resource *res;
 	const struct logic_iomem_region_ops *ops;
 	struct list_head list;
 };
 
 struct logic_iomem_area {
+	struct logic_iomem_region *region;
 	const struct logic_iomem_ops *ops;
 	void *priv;
 };
@@ -68,6 +69,35 @@ int logic_iomem_add_region(struct resource *resource,
 }
 EXPORT_SYMBOL(logic_iomem_add_region);
 
+int logic_iomem_remove_region(struct resource *resource)
+{
+	struct logic_iomem_region *region;
+	int ret = -ENOENT;
+	unsigned int i;
+
+	mutex_lock(&regions_mtx);
+	list_for_each_entry(region, &regions_list, list) {
+		if (region->res != resource)
+			continue;
+		ret = -EBUSY;
+		if (resource->child)
+			break;
+		for (i = 0; i < MAX_AREAS; i++)
+			if (mapped_areas[i].region == region)
+				goto unlock;
+		ret = release_resource(resource);
+		if (ret)
+			break;
+		list_del(&region->list);
+		kfree(region);
+		break;
+	}
+unlock:
+	mutex_unlock(&regions_mtx);
+	return ret;
+}
+EXPORT_SYMBOL_GPL(logic_iomem_remove_region);
+
 #ifndef CONFIG_INDIRECT_IOMEM_FALLBACK
 static void __iomem *real_ioremap(phys_addr_t offset, size_t size)
 {
@@ -108,7 +138,7 @@ void __iomem *ioremap(phys_addr_t offset, size_t size)
 		if (mapped_areas[i].ops)
 			continue;
 
-		offs = rreg->ops->map(offset - found->res->start,
+		offs = rreg->ops->map(found->res, offset - found->res->start,
 				      size, &mapped_areas[i].ops,
 				      &mapped_areas[i].priv);
 		if (offs < 0) {
@@ -121,6 +151,7 @@ void __iomem *ioremap(phys_addr_t offset, size_t size)
 			break;
 		}
 
+		mapped_areas[i].region = found;
 		ret = (void __iomem *)(IOREMAP_BIAS + (i << AREA_SHIFT) + offs);
 		break;
 	}
@@ -164,6 +195,7 @@ void iounmap(volatile void __iomem *addr)
 	mutex_lock(&regions_mtx);
 	area->ops = NULL;
 	area->priv = NULL;
+	area->region = NULL;
 	mutex_unlock(&regions_mtx);
 }
 EXPORT_SYMBOL(iounmap);
