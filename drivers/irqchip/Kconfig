@@ -289,6 +289,18 @@ config RENESAS_INTC_IRQPIN
 	  Enable support for the Renesas Interrupt Controller for external
 	  interrupt pins, as found on SH/R-Mobile and R-Car Gen1 SoCs.
 
+config REALTEK_RTD1296_IRQ_MUX
+	bool "Realtek RTD1296 interrupt mux" if COMPILE_TEST
+	default ARCH_REALTEK
+	depends on OF
+	select IRQ_DOMAIN
+	help
+	  Enable support for the MISC and ISO interrupt muxes of the Realtek
+	  RTD1296 SoCs, which collect the interrupts of
+	  the UARTs, I2C, GPIO, RTC and other low-speed peripherals into one
+	  GIC interrupt per block. Without it these peripherals have no
+	  interrupts.
+
 config RENESAS_IRQC
 	bool "Renesas R-Mobile APE6, R-Car Gen{2,3} and RZ/G{1,2} IRQC support" if COMPILE_TEST
 	select GENERIC_IRQ_CHIP
