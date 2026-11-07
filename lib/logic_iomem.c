@@ -3,6 +3,7 @@
  * Copyright (C) 2021 Intel Corporation
  * Author: Johannes Berg <johannes@sipsolutions.net>
  */
+#include <linux/err.h>
 #include <linux/types.h>
 #include <linux/slab.h>
 #include <linux/logic_iomem.h>
@@ -25,13 +26,6 @@ struct logic_iomem_area {
 #define MAX_AREAS	((1U << 31) / MAX_AREA_SIZE)
 #define AREA_BITS	((MAX_AREAS - 1) << AREA_SHIFT)
 #define AREA_MASK	(MAX_AREA_SIZE - 1)
-#ifdef CONFIG_64BIT
-#define IOREMAP_BIAS	0xDEAD000000000000UL
-#define IOREMAP_MASK	0xFFFFFFFF00000000UL
-#else
-#define IOREMAP_BIAS	0x80000000UL
-#define IOREMAP_MASK	0x80000000UL
-#endif
 
 static DEFINE_MUTEX(regions_mtx);
 static LIST_HEAD(regions_list);
@@ -113,18 +107,27 @@ static void real_iounmap(volatile void __iomem *addr)
 }
 #endif /* CONFIG_INDIRECT_IOMEM_FALLBACK */
 
-void __iomem *ioremap(phys_addr_t offset, size_t size)
+void __iomem *logic_iomem_map(phys_addr_t offset, size_t size)
 {
+	phys_addr_t last = offset + size - 1;
 	void __iomem *ret = NULL;
 	struct logic_iomem_region *rreg, *found = NULL;
+	int err = -ENOENT;
 	int i;
+
+	if (!size || last < offset)
+		return IOMEM_ERR_PTR(-EINVAL);
 
 	mutex_lock(&regions_mtx);
 	list_for_each_entry(rreg, &regions_list, list) {
-		if (rreg->res->start > offset)
+		if (rreg->res->start > last)
 			continue;
-		if (rreg->res->end < offset + size - 1)
+		if (rreg->res->end < offset)
 			continue;
+		if (rreg->res->start > offset || rreg->res->end < last) {
+			err = -ERANGE;
+			goto out;
+		}
 		found = rreg;
 		break;
 	}
@@ -132,6 +135,7 @@ void __iomem *ioremap(phys_addr_t offset, size_t size)
 	if (!found)
 		goto out;
 
+	err = -ENOSPC;
 	for (i = 0; i < MAX_AREAS; i++) {
 		long offs;
 
@@ -142,26 +146,39 @@ void __iomem *ioremap(phys_addr_t offset, size_t size)
 				      size, &mapped_areas[i].ops,
 				      &mapped_areas[i].priv);
 		if (offs < 0) {
+			err = offs == -ENOENT ? -ENXIO : offs;
 			mapped_areas[i].ops = NULL;
+			mapped_areas[i].priv = NULL;
 			break;
 		}
 
 		if (WARN_ON(!mapped_areas[i].ops)) {
+			err = -EINVAL;
 			mapped_areas[i].ops = NULL;
 			break;
 		}
 
 		mapped_areas[i].region = found;
-		ret = (void __iomem *)(IOREMAP_BIAS + (i << AREA_SHIFT) + offs);
+		ret = (void __iomem *)(LOGIC_IOMEM_ADDR_BASE + (i << AREA_SHIFT) + offs);
 		break;
 	}
 out:
 	mutex_unlock(&regions_mtx);
 	if (ret)
 		return ret;
-	return real_ioremap(offset, size);
+	return IOMEM_ERR_PTR(err);
 }
-EXPORT_SYMBOL(ioremap);
+EXPORT_SYMBOL_GPL(logic_iomem_map);
+
+void __iomem *logic_iomem_ioremap(phys_addr_t offset, size_t size)
+{
+	void __iomem *addr = logic_iomem_map(offset, size);
+
+	if (IS_ERR(addr))
+		return real_ioremap(offset, size);
+	return addr;
+}
+EXPORT_SYMBOL(logic_iomem_ioremap);
 
 static inline struct logic_iomem_area *
 get_area(const volatile void __iomem *addr)
@@ -169,7 +186,7 @@ get_area(const volatile void __iomem *addr)
 	unsigned long a = (unsigned long)addr;
 	unsigned int idx;
 
-	if (WARN_ON((a & IOREMAP_MASK) != IOREMAP_BIAS))
+	if (WARN_ON((a & LOGIC_IOMEM_ADDR_MASK) != LOGIC_IOMEM_ADDR_BASE))
 		return NULL;
 
 	idx = (a & AREA_BITS) >> AREA_SHIFT;
@@ -180,7 +197,7 @@ get_area(const volatile void __iomem *addr)
 	return NULL;
 }
 
-void iounmap(volatile void __iomem *addr)
+void logic_iomem_iounmap(volatile void __iomem *addr)
 {
 	struct logic_iomem_area *area = get_area(addr);
 
@@ -198,7 +215,7 @@ void iounmap(volatile void __iomem *addr)
 	area->region = NULL;
 	mutex_unlock(&regions_mtx);
 }
-EXPORT_SYMBOL(iounmap);
+EXPORT_SYMBOL(logic_iomem_iounmap);
 
 #ifndef CONFIG_INDIRECT_IOMEM_FALLBACK
 #define MAKE_FALLBACK(op, sz) 						\
@@ -248,7 +265,7 @@ static void real_memcpy_toio(volatile void __iomem *addr, const void *buffer,
 #endif /* CONFIG_INDIRECT_IOMEM_FALLBACK */
 
 #define MAKE_OP(op, sz) 						\
-u##sz __raw_read ## op(const volatile void __iomem *addr)		\
+u##sz logic_iomem_read ## op(const volatile void __iomem *addr)		\
 {									\
 	struct logic_iomem_area *area = get_area(addr);			\
 									\
@@ -259,9 +276,9 @@ u##sz __raw_read ## op(const volatile void __iomem *addr)		\
 					 (unsigned long)addr & AREA_MASK,\
 					 sz / 8);			\
 }									\
-EXPORT_SYMBOL(__raw_read ## op);					\
+EXPORT_SYMBOL(logic_iomem_read ## op);					\
 									\
-void __raw_write ## op(u ## sz val, volatile void __iomem *addr)	\
+void logic_iomem_write ## op(u ## sz val, volatile void __iomem *addr)	\
 {									\
 	struct logic_iomem_area *area = get_area(addr);			\
 									\
@@ -274,7 +291,7 @@ void __raw_write ## op(u ## sz val, volatile void __iomem *addr)	\
 			 (unsigned long)addr & AREA_MASK,		\
 			 sz / 8, val);					\
 }									\
-EXPORT_SYMBOL(__raw_write ## op)
+EXPORT_SYMBOL(logic_iomem_write ## op)
 
 MAKE_OP(b, 8);
 MAKE_OP(w, 16);
@@ -283,7 +300,7 @@ MAKE_OP(l, 32);
 MAKE_OP(q, 64);
 #endif
 
-void memset_io(volatile void __iomem *addr, int value, size_t size)
+void logic_iomem_memset_io(volatile void __iomem *addr, int value, size_t size)
 {
 	struct logic_iomem_area *area = get_area(addr);
 	unsigned long offs, start;
@@ -303,10 +320,10 @@ void memset_io(volatile void __iomem *addr, int value, size_t size)
 	for (offs = 0; offs < size; offs++)
 		area->ops->write(area->priv, start + offs, 1, value);
 }
-EXPORT_SYMBOL(memset_io);
+EXPORT_SYMBOL(logic_iomem_memset_io);
 
-void memcpy_fromio(void *buffer, const volatile void __iomem *addr,
-                   size_t size)
+void logic_iomem_memcpy_fromio(void *buffer, const volatile void __iomem *addr,
+			       size_t size)
 {
 	struct logic_iomem_area *area = get_area(addr);
 	u8 *buf = buffer;
@@ -327,9 +344,9 @@ void memcpy_fromio(void *buffer, const volatile void __iomem *addr,
 	for (offs = 0; offs < size; offs++)
 		buf[offs] = area->ops->read(area->priv, start + offs, 1);
 }
-EXPORT_SYMBOL(memcpy_fromio);
+EXPORT_SYMBOL(logic_iomem_memcpy_fromio);
 
-void memcpy_toio(volatile void __iomem *addr, const void *buffer, size_t size)
+void logic_iomem_memcpy_toio(volatile void __iomem *addr, const void *buffer, size_t size)
 {
 	struct logic_iomem_area *area = get_area(addr);
 	const u8 *buf = buffer;
@@ -350,4 +367,4 @@ void memcpy_toio(volatile void __iomem *addr, const void *buffer, size_t size)
 	for (offs = 0; offs < size; offs++)
 		area->ops->write(area->priv, start + offs, 1, buf[offs]);
 }
-EXPORT_SYMBOL(memcpy_toio);
+EXPORT_SYMBOL(logic_iomem_memcpy_toio);

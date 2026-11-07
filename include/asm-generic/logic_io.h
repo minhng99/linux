@@ -5,7 +5,7 @@
  */
 #ifndef _LOGIC_IO_H
 #define _LOGIC_IO_H
-#include <linux/types.h>
+#include <linux/logic_iomem.h>
 
 /* include this file into asm/io.h */
 
@@ -30,49 +30,21 @@
 #endif /* defined ... */
 #endif /* CONFIG_INDIRECT_IOMEM_FALLBACK */
 
-#define ioremap ioremap
-void __iomem *ioremap(phys_addr_t offset, size_t size);
-
-#define iounmap iounmap
-void iounmap(void volatile __iomem *addr);
-
-#define __raw_readb __raw_readb
-u8 __raw_readb(const volatile void __iomem *addr);
-
-#define __raw_readw __raw_readw
-u16 __raw_readw(const volatile void __iomem *addr);
-
-#define __raw_readl __raw_readl
-u32 __raw_readl(const volatile void __iomem *addr);
-
+#define ioremap logic_iomem_ioremap
+#define iounmap logic_iomem_iounmap
+#define __raw_readb logic_iomem_readb
+#define __raw_writeb logic_iomem_writeb
+#define __raw_readw logic_iomem_readw
+#define __raw_writew logic_iomem_writew
+#define __raw_readl logic_iomem_readl
+#define __raw_writel logic_iomem_writel
 #ifdef CONFIG_64BIT
-#define __raw_readq __raw_readq
-u64 __raw_readq(const volatile void __iomem *addr);
-#endif /* CONFIG_64BIT */
-
-#define __raw_writeb __raw_writeb
-void __raw_writeb(u8 value, volatile void __iomem *addr);
-
-#define __raw_writew __raw_writew
-void __raw_writew(u16 value, volatile void __iomem *addr);
-
-#define __raw_writel __raw_writel
-void __raw_writel(u32 value, volatile void __iomem *addr);
-
-#ifdef CONFIG_64BIT
-#define __raw_writeq __raw_writeq
-void __raw_writeq(u64 value, volatile void __iomem *addr);
-#endif /* CONFIG_64BIT */
-
-#define memset_io memset_io
-void memset_io(volatile void __iomem *addr, int value, size_t size);
-
-#define memcpy_fromio memcpy_fromio
-void memcpy_fromio(void *buffer, const volatile void __iomem *addr,
-		   size_t size);
-
-#define memcpy_toio memcpy_toio
-void memcpy_toio(volatile void __iomem *addr, const void *buffer, size_t size);
+#define __raw_readq logic_iomem_readq
+#define __raw_writeq logic_iomem_writeq
+#endif
+#define memset_io logic_iomem_memset_io
+#define memcpy_fromio logic_iomem_memcpy_fromio
+#define memcpy_toio logic_iomem_memcpy_toio
 
 #endif /* CONFIG_INDIRECT_IOMEM */
 #endif /* _LOGIC_IO_H */

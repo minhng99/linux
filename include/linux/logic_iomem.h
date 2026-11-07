@@ -62,4 +62,37 @@ int logic_iomem_add_region(struct resource *resource,
 /* Consumers must release mappings and child resources before unregistering. */
 int logic_iomem_remove_region(struct resource *resource);
 
+#ifdef CONFIG_INDIRECT_IOMEM
+#ifdef CONFIG_64BIT
+#define LOGIC_IOMEM_ADDR_BASE 0xDEAD000000000000UL
+#define LOGIC_IOMEM_ADDR_MASK 0xFFFFFFFF00000000UL
+#else
+#define LOGIC_IOMEM_ADDR_BASE 0x80000000UL
+#define LOGIC_IOMEM_ADDR_MASK 0x80000000UL
+#endif
+
+static inline bool logic_iomem_is_addr(const volatile void __iomem *addr)
+{
+	return ((unsigned long __force)addr & LOGIC_IOMEM_ADDR_MASK) == LOGIC_IOMEM_ADDR_BASE;
+}
+
+/* Unregistered ranges return ERR_PTR(-ENOENT); provider failures remain distinct. */
+void __iomem *logic_iomem_map(phys_addr_t offset, size_t size);
+void __iomem *logic_iomem_ioremap(phys_addr_t offset, size_t size);
+void logic_iomem_iounmap(volatile void __iomem *addr);
+u8 logic_iomem_readb(const volatile void __iomem *addr);
+u16 logic_iomem_readw(const volatile void __iomem *addr);
+u32 logic_iomem_readl(const volatile void __iomem *addr);
+void logic_iomem_writeb(u8 value, volatile void __iomem *addr);
+void logic_iomem_writew(u16 value, volatile void __iomem *addr);
+void logic_iomem_writel(u32 value, volatile void __iomem *addr);
+#ifdef CONFIG_64BIT
+u64 logic_iomem_readq(const volatile void __iomem *addr);
+void logic_iomem_writeq(u64 value, volatile void __iomem *addr);
+#endif
+void logic_iomem_memset_io(volatile void __iomem *addr, int value, size_t size);
+void logic_iomem_memcpy_fromio(void *buffer, const volatile void __iomem *addr, size_t size);
+void logic_iomem_memcpy_toio(volatile void __iomem *addr, const void *buffer, size_t size);
+#endif
+
 #endif /* __LOGIC_IOMEM_H */
