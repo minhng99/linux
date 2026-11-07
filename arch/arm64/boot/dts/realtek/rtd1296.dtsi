@@ -199,6 +199,11 @@
 };
 
 &rbus {
+	efuse: efuse@17000 {
+		compatible = "realtek,rtd1296-efuse";
+		reg = <0x17000 0x400>;
+	};
+
 	cr_pinctrl: pinctrl@12600 {
 		compatible = "realtek,rtd1296-cr-pinctrl";
 		reg = <0x12600 0x20>;
