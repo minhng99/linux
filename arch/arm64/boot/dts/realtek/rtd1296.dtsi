@@ -84,6 +84,11 @@
 		clocks = <&osc27M>;
 		#clock-cells = <1>;
 	};
+
+	nat_power: power-controller {
+		compatible = "realtek,rtd1296-nat-sram-power";
+		#power-domain-cells = <0>;
+	};
 };
 
 &iso {
@@ -267,6 +272,18 @@
 				reg = <0>;
 			};
 		};
+	};
+
+	swnic: ethernet@60000 {
+		compatible = "realtek,rtd1296-ethernet";
+		reg = <0x60000 0x170000>;
+		interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_NAT>,
+			 <&crt_clk RTD1296_CRT_PLL_DDSB>;
+		clock-names = "bus", "core";
+		resets = <&reset1 RTD1295_RSTN_NAT>;
+		power-domains = <&nat_power>;
+		status = "disabled";
 	};
 };
 

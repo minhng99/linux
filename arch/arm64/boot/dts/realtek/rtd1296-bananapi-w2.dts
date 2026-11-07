@@ -26,6 +26,7 @@
 		mmc0 = &emmc;
 		mmc1 = &sd;
 		ethernet0 = &gmac;
+		ethernet1 = &swnic;
 	};
 
 	chosen {
@@ -381,4 +382,41 @@
 
 &gmac {
 	status = "okay";
+};
+
+&sb2_pinctrl {
+	rgmii0_pins: rgmii0-pins {
+		pins = "rgmii0_txc", "rgmii0_tx_ctl", "rgmii0_txd_0", "rgmii0_txd_1",
+		       "rgmii0_txd_2", "rgmii0_txd_3", "rgmii0_rxc", "rgmii0_rx_ctl",
+		       "rgmii0_rxd_0", "rgmii0_rxd_1", "rgmii0_rxd_2", "rgmii0_rxd_3",
+		       "rgmii0_mdio", "rgmii0_mdc";
+		function = "rgmii";
+		power-source = <0>;
+		drive-strength = <4>;
+		bias-disable;
+		input-schmitt-disable;
+	};
+
+	rgmii0_slew_pins: rgmii0-slew-pins {
+		pins = "rgmii0_txc", "rgmii0_tx_ctl", "rgmii0_txd_0", "rgmii0_txd_1",
+		       "rgmii0_txd_2", "rgmii0_txd_3";
+		slew-rate = <0>;
+	};
+};
+
+&swnic {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii0_pins &rgmii0_slew_pins>;
+	phy-mode = "rgmii-id";
+	phy-handle = <&rgmii0_phy>;
+	status = "okay";
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		rgmii0_phy: ethernet-phy@1 {
+			reg = <1>;
+		};
+	};
 };
