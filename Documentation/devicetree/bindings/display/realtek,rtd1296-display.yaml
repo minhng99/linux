@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/realtek,rtd1296-display.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 display controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description:
+  The video output controller feeds the HDMI and DisplayPort transmitters.
+  The transmitters share display clock routing and reset controls.
+
+properties:
+  compatible:
+    const: realtek,rtd1296-display
+
+  reg:
+    items:
+      - description: Video output controller
+      - description: HDMI transmitter
+      - description: DisplayPort analogue interface and timing generator
+      - description: DisplayPort transmitter
+
+  reg-names:
+    items:
+      - const: vo
+      - const: hdmi
+      - const: lvds
+      - const: dp
+
+  interrupts:
+    items:
+      - description: HDMI transmitter interrupt
+      - description: DisplayPort timing generator interrupt
+
+  interrupt-names:
+    items:
+      - const: hdmi
+      - const: pif
+
+  clocks:
+    maxItems: 4
+
+  clock-names:
+    items:
+      - const: vo
+      - const: hdmi
+      - const: tve
+      - const: lvds
+
+  resets:
+    maxItems: 6
+
+  reset-names:
+    items:
+      - const: vo
+      - const: hdmi
+      - const: lvds
+      - const: dp
+      - const: domain
+      - const: tve
+
+  realtek,crt:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: CRT system controller
+
+  ddc-i2c-bus:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: HDMI DDC controller
+
+  hdmi-hpd-gpios:
+    maxItems: 1
+    description: HDMI hotplug input
+
+  dp-hpd-gpios:
+    maxItems: 1
+    description: DisplayPort hotplug input
+
+required:
+  - compatible
+  - reg
+  - reg-names
+  - interrupts
+  - interrupt-names
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - realtek,crt
+  - ddc-i2c-bus
+  - hdmi-hpd-gpios
+  - dp-hpd-gpios
+
+additionalProperties: false
