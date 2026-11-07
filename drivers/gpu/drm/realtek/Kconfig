@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config DRM_RTD1296
+	tristate "Realtek RTD1296 display controller"
+	depends on DRM && OF && COMMON_CLK
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on I2C
+	depends on PM && GPIOLIB && RESET_CONTROLLER
+	select DRM_CLIENT_SELECTION
+	select DRM_GEM_DMA_HELPER
+	select DRM_KMS_HELPER
+	select DRM_DISPLAY_HELPER
+	select DRM_DISPLAY_DP_HELPER
+	select MFD_SYSCON
+	help
+	  Support the video output controller and its HDMI and DisplayPort
+	  transmitters. The driver provides an atomic KMS display pipeline,
+	  linear RGB scanout buffers, hotplug detection and EDID access.
+	  Output clocks and resets follow runtime power management.
