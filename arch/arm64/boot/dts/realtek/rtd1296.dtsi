@@ -5,6 +5,8 @@
  * Copyright (c) 2017-2019 Andreas Färber
  */
 
+#include <dt-bindings/clock/realtek,rtd1296-clk.h>
+
 #include "rtd129x.dtsi"
 
 / {
@@ -19,6 +21,8 @@
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x0>;
 			next-level-cache = <&l2>;
+			clocks = <&crt_clk RTD1296_CRT_CLK_SCPU>;
+			#cooling-cells = <2>;
 		};
 
 		cpu1: cpu@1 {
@@ -26,6 +30,8 @@
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x1>;
 			next-level-cache = <&l2>;
+			clocks = <&crt_clk RTD1296_CRT_CLK_SCPU>;
+			#cooling-cells = <2>;
 		};
 
 		cpu2: cpu@2 {
@@ -33,6 +39,8 @@
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x2>;
 			next-level-cache = <&l2>;
+			clocks = <&crt_clk RTD1296_CRT_CLK_SCPU>;
+			#cooling-cells = <2>;
 		};
 
 		cpu3: cpu@3 {
@@ -40,6 +48,8 @@
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x3>;
 			next-level-cache = <&l2>;
+			clocks = <&crt_clk RTD1296_CRT_CLK_SCPU>;
+			#cooling-cells = <2>;
 		};
 
 		l2: l2-cache {
@@ -64,4 +74,155 @@
 
 &arm_pmu {
 	interrupt-affinity = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>;
+};
+
+&crt {
+	compatible = "realtek,rtd1296-crt", "syscon", "simple-mfd";
+
+	crt_clk: clock-controller {
+		compatible = "realtek,rtd1296-crt-clk";
+		clocks = <&osc27M>;
+		#clock-cells = <1>;
+	};
+};
+
+&iso {
+	compatible = "realtek,rtd1296-iso", "syscon", "simple-mfd";
+
+	i2c0: i2c@d00 {
+		compatible = "snps,designware-i2c";
+		reg = <0xd00 0x100>;
+		interrupt-parent = <&iso_irq_mux>;
+		interrupts = <8>;
+		clocks = <&iso_clk RTD1296_ISO_CLK_EN_I2C0>;
+		resets = <&iso_reset RTD1295_ISO_RSTN_I2C_0>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c0_pins>;
+		status = "disabled";
+	};
+
+	iso_clk: clock-controller {
+		compatible = "realtek,rtd1296-iso-clk";
+		clocks = <&osc27M>;
+		#clock-cells = <1>;
+	};
+
+	iso_irq_mux: interrupt-controller@0 {
+		compatible = "realtek,rtd1296-iso-irq-mux";
+		reg = <0x0 0x4>, <0x40 0x4>;
+		interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "peripherals", "rtc-alarm";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	iso_gpio: gpio@100 {
+		compatible = "realtek,rtd1295-iso-gpio";
+		reg = <0x100 0x100>,
+		      <0x0 0xe8>;
+		interrupt-parent = <&iso_irq_mux>;
+		interrupts = <19>, <20>;
+		gpio-ranges = <&iso_pinctrl 0 0 35>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	iso_pinctrl: pinctrl@300 {
+		compatible = "realtek,rtd1296-iso-pinctrl";
+		reg = <0x300 0x24>;
+
+		i2c0_pins: i2c0-pins {
+			function = "i2c0";
+			pins = "i2c_scl_0", "i2c_sda_0";
+		};
+	};
+};
+
+&misc {
+	compatible = "realtek,rtd1296-misc", "syscon", "simple-mfd";
+
+	rtc: rtc@600 {
+		compatible = "realtek,rtd1295-rtc";
+		reg = <0x600 0x34>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_RTC>;
+		interrupt-parent = <&iso_irq_mux>;
+		interrupts = <13>;
+		realtek,iso-syscon = <&iso>;
+		wakeup-source;
+		status = "disabled";
+	};
+
+	misc_irq_mux: interrupt-controller@c {
+		compatible = "realtek,rtd1296-misc-irq-mux";
+		reg = <0xc 0x4>, <0x80 0x4>;
+		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	misc_gpio: gpio@100 {
+		compatible = "realtek,rtd1295-misc-gpio";
+		reg = <0x100 0x100>,
+		      <0x0 0xc0>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <19>, <20>;
+		gpio-ranges = <&sb2_pinctrl 0 0 54>,
+			      <&disp_pinctrl 54 0 10>,
+			      <&cr_pinctrl 64 0 37>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&sb2 {
+	compatible = "realtek,rtd1296-sb2", "syscon", "simple-mfd";
+
+	sb2_pinctrl: pinctrl@900 {
+		compatible = "realtek,rtd1296-sb2-pinctrl";
+		reg = <0x900 0x80>;
+	};
+};
+
+&scpu_wrapper {
+	compatible = "realtek,rtd1296-scpu-wrapper", "syscon", "simple-mfd";
+
+	cpu_thermal_sensor: thermal-sensor@150 {
+		compatible = "realtek,rtd1296-thermal";
+		reg = <0x150 0x20>;
+		#thermal-sensor-cells = <0>;
+		status = "disabled";
+	};
+};
+
+&rbus {
+	cr_pinctrl: pinctrl@12600 {
+		compatible = "realtek,rtd1296-cr-pinctrl";
+		reg = <0x12600 0x20>;
+	};
+
+	disp_pinctrl: pinctrl@4d000 {
+		compatible = "realtek,rtd1296-disp-pinctrl";
+		reg = <0x4d000 0xc>;
+	};
+};
+
+&uart0 {
+	/delete-property/ clock-frequency;
+	clocks = <&iso_clk RTD1296_ISO_CLK_EN_UR0>;
+	interrupt-parent = <&iso_irq_mux>;
+	interrupts = <2>;
+};
+
+&uart1 {
+	interrupt-parent = <&misc_irq_mux>;
+	interrupts = <3>;
+};
+
+&uart2 {
+	interrupt-parent = <&misc_irq_mux>;
+	interrupts = <8>;
 };
