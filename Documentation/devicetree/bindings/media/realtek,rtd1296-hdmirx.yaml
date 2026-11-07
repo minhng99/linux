@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/media/realtek,rtd1296-hdmirx.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 HDMI receiver
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description:
+  The HDMI receiver includes a TMDS decoder, equalizer and video PLL.
+  A wrapper feeds decoded video to a two-slot memory capture engine.
+  The DDC responder provides EDID storage for the input connector.
+
+properties:
+  compatible:
+    const: realtek,rtd1296-hdmirx
+
+  reg:
+    items:
+      - description: Receiver, PHY and equalizer
+      - description: Video wrapper
+      - description: DDC responder
+      - description: Memory capture engine
+      - description: CBUS physical interface and source detection
+
+  reg-names:
+    items:
+      - const: rx
+      - const: wrapper
+      - const: ddc
+      - const: capture
+      - const: cbus
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    items:
+      - description: Receiver bus clock
+      - description: Capture bus clock
+      - description: Shared VO clock
+      - description: CBUS oscillator clock
+      - description: CBUS system clock
+      - description: CBUS transmitter clock
+      - description: CBUS receiver clock
+
+  clock-names:
+    items:
+      - const: rx
+      - const: capture
+      - const: vo
+      - const: cbus-osc
+      - const: cbus
+      - const: cbus-tx
+      - const: cbus-rx
+
+  resets:
+    items:
+      - description: Receiver reset
+      - description: Input wrapper reset
+      - description: Capture engine reset
+      - description: CBUS controller reset
+      - description: CBUS transmitter reset
+      - description: CBUS receiver reset
+      - description: Shared display reset
+
+  reset-names:
+    items:
+      - const: rx
+      - const: wrapper
+      - const: capture
+      - const: cbus
+      - const: cbus-tx
+      - const: cbus-rx
+      - const: domain
+
+  hpd-gpios:
+    maxItems: 1
+    description: Hotplug output asserted after EDID becomes available
+
+required:
+  - compatible
+  - reg
+  - reg-names
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - hpd-gpios
+
+additionalProperties: false
