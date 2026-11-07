@@ -231,3 +231,16 @@
 	interrupt-parent = <&misc_irq_mux>;
 	interrupts = <8>;
 };
+
+&{/soc@0} {
+	sfc: spi@9801a800 {
+		compatible = "realtek,rtd1296-sfc";
+		reg = <0x9801a800 0x30>, <0x88100000 0x1000000>;
+		reg-names = "ctrl", "flash";
+		clocks = <&crt_clk RTD1296_CRT_CLK_SYS_SB2>;
+		realtek,sb2 = <&sb2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+};
