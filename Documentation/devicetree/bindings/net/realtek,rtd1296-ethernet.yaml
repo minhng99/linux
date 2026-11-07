@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/realtek,rtd1296-ethernet.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 switch Ethernet controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description: |
+  The controller combines the switch CPU DMA interface and RGMII0 MAC.
+
+allOf:
+  - $ref: ethernet-controller.yaml#
+
+properties:
+  compatible:
+    const: realtek,rtd1296-ethernet
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    maxItems: 2
+
+  clock-names:
+    items:
+      - const: bus
+      - const: core
+
+  resets:
+    maxItems: 1
+
+  power-domains:
+    maxItems: 1
+
+  phy-mode:
+    enum: [rgmii, rgmii-id, rgmii-rxid, rgmii-txid]
+
+  mdio:
+    $ref: mdio.yaml#
+    unevaluatedProperties: false
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - power-domains
+  - phy-mode
+  - phy-handle
+  - mdio
+
+unevaluatedProperties: false
