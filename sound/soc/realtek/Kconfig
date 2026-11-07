@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config SND_SOC_RTD1296_AIO
+	tristate "Realtek RTD1296 analogue microphone capture"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on OF && HAS_DMA && COMMON_CLK && RESET_CONTROLLER && PM
+	help
+	  Support the integrated stereo microphone ADC and CPU DMA on RTD1296.
+	  The controller provides 48 kHz, 16-bit big-endian capture.
+	  Select M to build this driver as a module.
+	  The module is called snd-soc-rtd1296-aio.
