@@ -32,6 +32,18 @@ config RTD1296_GMAC
 	  NAPI and page-pool manage receive buffers through the DMA API.
 	  The internal MDIO interface controls the integrated PHY.
 
+config RTD1296_ETHERNET
+	tristate "Realtek RTD1296 RGMII0 Ethernet"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on OF && HAS_DMA && PM
+	select OF_MDIO
+	select PHYLINK
+	help
+	  Support the external RGMII0 port and switch CPU DMA on RTD1296.
+	  Phylink manages the PHY through the internal MDIO controller.
+	  Select M to build this driver as a module.
+	  The module is called rtd1296-ethernet.
+
 config 8139CP
 	tristate "RealTek RTL-8139 C+ PCI Fast Ethernet Adapter support"
 	depends on PCI

@@ -9,4 +9,5 @@ r8169-y += r8169_main.o r8169_firmware.o r8169_phy_config.o
 r8169-$(CONFIG_R8169_LEDS) += r8169_leds.o
 obj-$(CONFIG_R8169) += r8169.o
 obj-$(CONFIG_RTD1296_GMAC) += rtd1296-gmac.o
+obj-$(CONFIG_RTD1296_ETHERNET) += rtd1296-ethernet.o
 obj-$(CONFIG_RTASE) += rtase/
