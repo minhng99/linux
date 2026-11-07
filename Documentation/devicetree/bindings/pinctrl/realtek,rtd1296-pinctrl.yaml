@@ -1,0 +1,229 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/pinctrl/realtek,rtd1296-pinctrl.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek DHC RTD1296 Pin Controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description: |
+  The pin controller of the Realtek RTD1296 SoC selects
+  the pin functions and configures the pull resistors, drive strength and
+  Schmitt trigger of the pads.
+
+  Its registers are spread over four register blocks, and each block is
+  described by its own node:
+
+  - ISO: the pins of the ISO GPIO controller (ISO GPIO 0-34)
+  - SB2: MISC GPIO 0-53
+  - DISP: MISC GPIO 54-63
+  - CR: MISC GPIO 64-100, the NAND, eMMC, SD card and SDIO pins
+
+  Each block numbers its pins from 0, with the GPIO capable pins first in GPIO
+  order. Pins whose name ends in "_loc" or "_en" are not pads but function
+  selection fields, for interfaces that can be routed to more than one set of
+  pins.
+
+properties:
+  compatible:
+    enum:
+      - realtek,rtd1296-iso-pinctrl
+      - realtek,rtd1296-sb2-pinctrl
+      - realtek,rtd1296-disp-pinctrl
+      - realtek,rtd1296-cr-pinctrl
+
+  reg:
+    maxItems: 1
+
+patternProperties:
+  '-pins$':
+    type: object
+    allOf:
+      - $ref: pincfg-node.yaml#
+      - $ref: pinmux-node.yaml#
+      - if:
+          required:
+            - power-source
+        then:
+          properties:
+            pins:
+              items:
+                enum: [rgmii0_txc, rgmii0_tx_ctl, rgmii0_txd_0, rgmii0_txd_1,
+                       rgmii0_txd_2, rgmii0_txd_3, rgmii0_rxc, rgmii0_rx_ctl,
+                       rgmii0_rxd_0, rgmii0_rxd_1, rgmii0_rxd_2, rgmii0_rxd_3,
+                       rgmii0_mdio, rgmii0_mdc]
+      - if:
+          required:
+            - slew-rate
+        then:
+          properties:
+            pins:
+              items:
+                enum: [rgmii0_txc, rgmii0_tx_ctl, rgmii0_txd_0, rgmii0_txd_1,
+                       rgmii0_txd_2, rgmii0_txd_3]
+
+    properties:
+      pins: true
+
+      function: true
+
+      drive-strength:
+        description:
+          Output current in mA. Depending on the pad, 2 and 4 or 4 and 8 are
+          supported, and the NAND, eMMC, SD card and SDIO pads have a fixed
+          drive strength.
+        enum: [2, 4, 8]
+
+      power-source:
+        description: Select the shared 1.8 V RGMII0 pad bias configuration.
+        const: 0
+
+      slew-rate:
+        description: RGMII0 transmitter slew rate, with 0 fast and 1 slow.
+        enum: [0, 1]
+
+      bias-pull-down: true
+
+      bias-pull-up: true
+
+      bias-disable: true
+
+      input-schmitt-enable: true
+
+      input-schmitt-disable: true
+
+    required:
+      - pins
+
+    additionalProperties: false
+
+allOf:
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: realtek,rtd1296-iso-pinctrl
+    then:
+      patternProperties:
+        '-pins$':
+          properties:
+            pins:
+              items:
+                enum: [iso_gpio_0, iso_gpio_1, iso_gpio_2, iso_gpio_3,
+                       iso_gpio_4, iso_gpio_5, hdmi_hpd, iso_gpio_7, ir_rx,
+                       ir_tx, ur0_rx, ur0_tx, ur1_rx, ur1_tx, ur1_cts_n,
+                       ur1_rts_n, i2c_scl_0, i2c_sda_0, i2c_scl_1, i2c_sda_1,
+                       i2c_scl_6, iso_gpio_21, iso_gpio_22, iso_gpio_23,
+                       iso_gpio_24, iso_gpio_25, i2c_sda_6, etn_led_link,
+                       etn_led_rxtx, nat_led_0, nat_led_1, nat_led_2, nat_led_3,
+                       iso_gpio_33, iso_gpio_34, pwm_23_open_drain_en_loc0,
+                       pwm_01_open_drain_en_loc0, pwm_23_open_drain_en_loc1,
+                       pwm_01_open_drain_en_loc1, ejtag_avcpu_loc, ur2_loc,
+                       i2c_tg_enable]
+            function:
+              enum: [gpio, acpu_ejtag_loc0, acpu_ejtag_loc1, edp_hpd, etn_led,
+                     i2c0, i2c1, i2c6, i2c_tg_disable, i2c_tg_enable, ir_rx,
+                     ir_tx, nat_led, pwm0_loc0, pwm0_loc1, pwm1_loc0, pwm1_loc1,
+                     pwm2_loc0, pwm2_loc1, pwm3_loc0, pwm3_loc1, pwm_normal,
+                     pwm_open_drain, rtc, sc0, standby_dbg, uart0, uart1,
+                     uart2_loc0, uart2_loc1]
+
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: realtek,rtd1296-sb2-pinctrl
+    then:
+      patternProperties:
+        '-pins$':
+          properties:
+            pins:
+              items:
+                enum: [gpio_0, gpio_1, gpio_2, gpio_3, gpio_4, gpio_5, gpio_6,
+                       gpio_7, gpio_8, gpio_9, tp1_sync, i2c_scl_4, i2c_sda_4,
+                       i2c_scl_5, i2c_sda_5, usb_id, sensor_cko_0, sensor_cko_1,
+                       sensor_rst, sensor_stb_0, sensor_stb_1, tp0_data,
+                       tp0_clk, tp0_valid, tp0_sync, tp1_data, tp1_clk,
+                       tp1_valid, rgmii0_txc, rgmii0_tx_ctl, rgmii0_txd_0,
+                       rgmii0_txd_1, rgmii0_txd_2, rgmii0_txd_3, rgmii0_rxc,
+                       rgmii0_rx_ctl, rgmii0_rxd_0, rgmii0_rxd_1, rgmii0_rxd_2,
+                       rgmii0_rxd_3, rgmii0_mdio, rgmii0_mdc, rgmii1_txc,
+                       rgmii1_tx_ctl, rgmii1_txd_0, rgmii1_txd_1, rgmii1_txd_2,
+                       rgmii1_txd_3, rgmii1_rxc, rgmii1_rx_ctl, rgmii1_rxd_0,
+                       rgmii1_rxd_1, rgmii1_rxd_2, rgmii1_rxd_3, hi_loc,
+                       ejtag_scpu_loc, sf_en, arm_trace_dbg_en,
+                       debug_p2s_enable, tp0_loc, tp1_loc]
+            function:
+              enum: [gpio, ai_loc0, arm_trace_debug_disable,
+                     arm_trace_debug_enable, dc_fan, etn_phy, gspi, hi_loc0,
+                     hi_loc1, i2c2, i2c3, i2c4, i2c5, nf, p2s_disable,
+                     p2s_enable, rgmii, scpu_ejtag_loc0, scpu_ejtag_loc1,
+                     sensor_cko, sf_disable, sf_enable, spi, test_loop_dis, tp0,
+                     tp0_loc0, tp0_loc1, tp1, tp1_loc0, tp1_loc1, usb_cko]
+
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: realtek,rtd1296-disp-pinctrl
+    then:
+      patternProperties:
+        '-pins$':
+          properties:
+            pins:
+              items:
+                enum: [spdif, dmic_clk, dmic_data, ao_lrck, ao_bck, aock,
+                       ao_sd_0, ao_sd_1, ao_sd_2, ao_sd_3, ai_loc]
+            function:
+              enum: [gpio, ai_loc0, ai_loc1, ao, dmic, spdif]
+
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: realtek,rtd1296-cr-pinctrl
+    then:
+      patternProperties:
+        '-pins$':
+          properties:
+            pins:
+              items:
+                enum: [nf_cle, nf_ale, nf_rd_n, nf_wr_n, nf_rdy, nf_dd_7,
+                       nf_dd_6, nf_dd_5, nf_dd_4, nf_dd_3, nf_dd_2, nf_dd_1,
+                       nf_dd_0, nf_dqs, nf_ce_n_0, nf_ce_n_1, emmc_dd_sb,
+                       mmc_cmd, mmc_clk, mmc_wp, mmc_cd, mmc_data_0, mmc_data_1,
+                       mmc_data_2, mmc_data_3, sdio_cmd, sdio_clk, sdio_data_0,
+                       sdio_data_1, sdio_data_2, sdio_data_3, pcie_clkreq_0,
+                       pcie_clkreq_1, prob_0, prob_1, prob_2, prob_3, sdio_loc]
+            function:
+              enum: [gpio, acpu_ejtag_loc1, emmc, hi_loc1, nf, p2s, pcie1,
+                     pcie2, pll_test, scpu_ejtag_loc1, sd, sdio_loc0, sdio_loc1]
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    pinctrl@300 {
+        compatible = "realtek,rtd1296-iso-pinctrl";
+        reg = <0x300 0x24>;
+
+        i2c0-pins {
+            pins = "i2c_scl_0", "i2c_sda_0";
+            function = "i2c0";
+            drive-strength = <4>;
+            bias-disable;
+        };
+
+        uart2-pins {
+            pins = "ur2_loc", "iso_gpio_2", "iso_gpio_3", "iso_gpio_4",
+                   "iso_gpio_5";
+            function = "uart2_loc0";
+        };
+    };
