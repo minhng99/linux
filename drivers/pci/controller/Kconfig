@@ -3,6 +3,20 @@
 menu "PCI controller drivers"
 	depends on PCI
 
+config PCI_RTD1296
+	bool "Realtek RTD1296 PCIe controllers"
+	depends on ARM64 && (ARCH_REALTEK || COMPILE_TEST)
+	depends on OF
+	select ARM64_INDIRECT_IOMEM
+	select IRQ_MSI_LIB if PCI_MSI
+	select MFD_SYSCON
+	select PCI_QUIRKS
+	help
+	  Enable the RTD1296 host controllers and their banked memory access.
+	  The controller manages its dedicated PHY, clock and reset sequencing.
+	  Logical BAR mappings are available through kernel I/O accessors.
+	  Userspace BAR mappings are unavailable.
+
 config PCI_HOST_COMMON
 	tristate
 	select PCI_ECAM
