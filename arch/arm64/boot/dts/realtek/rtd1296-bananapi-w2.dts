@@ -21,6 +21,17 @@
 		reg = <0x1f000 0x7ffe1000>;
 	};
 
+	reserved-memory {
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x0c000000>;
+			alignment = <0x00200000>;
+			alloc-ranges = <0x02000000 0x7e000000>;
+			linux,cma-default;
+		};
+	};
+
 	aliases {
 		serial0 = &uart0;
 		mmc0 = &emmc;
@@ -595,4 +606,23 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&display_hpd_pins>;
 	status = "okay";
+};
+
+&hdmirx {
+	hpd-gpios = <&iso_gpio 22 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&hdmirx_control_pins &hdmirx_ddc_pins>;
+	status = "okay";
+};
+
+&iso_pinctrl {
+	hdmirx_control_pins: hdmirx-control-pins {
+		pins = "iso_gpio_22";
+		function = "gpio";
+	};
+
+	hdmirx_ddc_pins: hdmirx-ddc-pins {
+		pins = "i2c_scl_6", "i2c_sda_6";
+		function = "i2c6";
+	};
 };

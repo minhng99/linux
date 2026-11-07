@@ -570,6 +570,31 @@
 		realtek,crt = <&crt>;
 		status = "disabled";
 	};
+
+	hdmirx: hdmi-receiver@34000 {
+		compatible = "realtek,rtd1296-hdmirx";
+		reg = <0x34000 0x1000>, <0x35f00 0x2c>,
+		      <0x37700 0x98>, <0x4100 0x100>, <0x37000 0x18>;
+		reg-names = "rx", "wrapper", "ddc", "capture", "cbus";
+		interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_HDMIRX>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_MIPI>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_VO>,
+			 <&iso_clk RTD1296_ISO_CLK_EN_CBUS_OSC>,
+			 <&iso_clk RTD1296_ISO_CLK_EN_CBUS_SYS>,
+			 <&iso_clk RTD1296_ISO_CLK_EN_CBUSTX_SYS>,
+			 <&iso_clk RTD1296_ISO_CLK_EN_CBUSRX_SYS>;
+		clock-names = "rx", "capture", "vo", "cbus-osc", "cbus", "cbus-tx", "cbus-rx";
+		resets = <&reset4 RTD1295_RSTN_HDMIRX>,
+			 <&reset4 RTD1295_RSTN_HDMIRX_WRAP>,
+			 <&reset1 RTD1295_RSTN_MIPI>,
+			 <&iso_reset RTD1295_ISO_RSTN_CBUS>,
+			 <&iso_reset RTD1295_ISO_RSTN_CBUSTX>,
+			 <&iso_reset RTD1295_ISO_RSTN_CBUSRX>,
+			 <&reset4 RTD1295_RSTN_DISP>;
+		reset-names = "rx", "wrapper", "capture", "cbus", "cbus-tx", "cbus-rx", "domain";
+		status = "disabled";
+	};
 };
 
 &uart0 {
