@@ -229,6 +229,9 @@ static int parse_fw_cfg(struct fwnode_handle *fwnode,
 
 	unsigned long *properties __free(bitmap) = bitmap_zalloc(count, GFP_KERNEL);
 
+	if (!properties)
+		return -ENOMEM;
+
 	for (i = 0; i < count; i++) {
 		u32 val;
 		int ret;
