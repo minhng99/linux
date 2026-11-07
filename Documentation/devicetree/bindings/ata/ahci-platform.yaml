@@ -29,6 +29,7 @@ properties:
               - marvell,berlin2q-ahci
               - qcom,apq8064-ahci
               - qcom,ipq806x-ahci
+              - realtek,rtd1296-ahci
               - socionext,uniphier-pro4-ahci
               - socionext,uniphier-pxs2-ahci
               - socionext,uniphier-pxs3-ahci
@@ -62,7 +63,7 @@ properties:
 
   resets:
     minItems: 1
-    maxItems: 3
+    maxItems: 4
 
   iommus:
     maxItems: 1
@@ -113,36 +114,56 @@ allOf:
       properties:
         compatible:
           contains:
-            const: socionext,uniphier-pro4-ahci
+            const: realtek,rtd1296-ahci
     then:
       properties:
+        clocks:
+          minItems: 2
+          maxItems: 2
         resets:
           items:
-            - description: reset line for the parent
-            - description: reset line for the glue logic
-            - description: reset line for the controller
+            - description: Port zero controller reset
+            - description: Port zero PHY interface reset
+            - description: Port one controller reset
+            - description: Port one PHY interface reset
       required:
+        - clocks
         - resets
     else:
       if:
         properties:
           compatible:
             contains:
-              enum:
-                - socionext,uniphier-pxs2-ahci
-                - socionext,uniphier-pxs3-ahci
+              const: socionext,uniphier-pro4-ahci
       then:
         properties:
           resets:
             items:
-              - description: reset for the glue logic
-              - description: reset for the controller
+              - description: reset line for the parent
+              - description: reset line for the glue logic
+              - description: reset line for the controller
         required:
           - resets
       else:
-        properties:
-          resets:
-            maxItems: 1
+        if:
+          properties:
+            compatible:
+              contains:
+                enum:
+                  - socionext,uniphier-pxs2-ahci
+                  - socionext,uniphier-pxs3-ahci
+        then:
+          properties:
+            resets:
+              items:
+                - description: reset for the glue logic
+                - description: reset for the controller
+          required:
+            - resets
+        else:
+          properties:
+            resets:
+              maxItems: 1
 
 unevaluatedProperties: false
 
