@@ -8,6 +8,7 @@
 #include <dt-bindings/clock/realtek,rtd1296-clk.h>
 
 #include "rtd129x.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	compatible = "realtek,rtd1296";
@@ -144,6 +145,39 @@
 			function = "i2c0";
 			pins = "i2c_scl_0", "i2c_sda_0";
 		};
+
+		i2c1_pins: i2c1-pins {
+			function = "i2c1";
+			pins = "i2c_scl_1", "i2c_sda_1";
+		};
+
+		i2c1_recovery_pins: i2c1-recovery-pins {
+			function = "gpio";
+			pins = "i2c_scl_1", "i2c_sda_1";
+		};
+
+		display_hpd_pins: display-hpd-pins {
+			function = "gpio";
+			pins = "hdmi_hpd", "iso_gpio_7";
+		};
+	};
+
+	i2c1: i2c@c00 {
+		compatible = "snps,designware-i2c";
+		reg = <0xc00 0x100>;
+		interrupt-parent = <&iso_irq_mux>;
+		interrupts = <11>;
+		clocks = <&iso_clk RTD1296_ISO_CLK_EN_I2C1>;
+		resets = <&iso_reset RTD1295_ISO_RSTN_I2C_1>;
+		clock-frequency = <100000>;
+		scl-gpios = <&iso_gpio 18 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&iso_gpio 19 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default", "recovery";
+		pinctrl-0 = <&i2c1_pins>;
+		pinctrl-1 = <&i2c1_recovery_pins>;
+		status = "disabled";
 	};
 };
 
@@ -510,6 +544,30 @@
 		clocks = <&crt_clk RTD1296_CRT_CLK_EN_GPU>;
 		resets = <&reset1 RTD1295_RSTN_GPU>;
 		#power-domain-cells = <0>;
+		status = "disabled";
+	};
+
+	display: display-controller@5000 {
+		compatible = "realtek,rtd1296-display";
+		reg = <0x5000 0x1000>, <0xd000 0x560>,
+		      <0x9400 0x600>, <0x3d000 0x1000>;
+		reg-names = "vo", "hdmi", "lvds", "dp";
+		interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "hdmi", "pif";
+		clocks = <&crt_clk RTD1296_CRT_CLK_EN_VO>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_HDMI>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_TVE>,
+			 <&crt_clk RTD1296_CRT_CLK_EN_LVDS>;
+		clock-names = "vo", "hdmi", "tve", "lvds";
+		resets = <&reset1 RTD1295_RSTN_VO>,
+			 <&reset1 RTD1295_RSTN_HDMI>,
+			 <&reset1 RTD1295_RSTN_LVDS>,
+			 <&iso_reset RTD1295_ISO_RSTN_DP>,
+			 <&reset4 RTD1295_RSTN_DISP>,
+			 <&reset1 RTD1295_RSTN_TVE>;
+		reset-names = "vo", "hdmi", "lvds", "dp", "domain", "tve";
+		realtek,crt = <&crt>;
 		status = "disabled";
 	};
 };

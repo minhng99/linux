@@ -583,3 +583,16 @@
 &gpu_power {
 	status = "okay";
 };
+
+&i2c1 {
+	status = "okay";
+};
+
+&display {
+	ddc-i2c-bus = <&i2c1>;
+	hdmi-hpd-gpios = <&iso_gpio 6 GPIO_ACTIVE_HIGH>;
+	dp-hpd-gpios = <&iso_gpio 7 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&display_hpd_pins>;
+	status = "okay";
+};
