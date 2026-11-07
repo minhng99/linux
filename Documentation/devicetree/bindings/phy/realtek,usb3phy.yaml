@@ -46,6 +46,7 @@ properties:
   compatible:
     enum:
       - realtek,rtd1295-usb3phy
+      - realtek,rtd1296-usb3phy
       - realtek,rtd1319-usb3phy
       - realtek,rtd1319d-usb3phy
       - realtek,rtd1619-usb3phy
