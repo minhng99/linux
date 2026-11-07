@@ -3482,10 +3482,52 @@ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
 L:	linux-realtek-soc@lists.infradead.org (moderated for non-subscribers)
 S:	Maintained
 F:	Documentation/devicetree/bindings/arm/realtek.yaml
+F:	Documentation/devicetree/bindings/clock/realtek,rtd1296-clk.yaml
+F:	Documentation/devicetree/bindings/display/realtek,rtd1296-display.yaml
+F:	Documentation/devicetree/bindings/interrupt-controller/realtek,rtd1296-irq-mux.yaml
+F:	Documentation/devicetree/bindings/media/realtek,rtd1296-hdmirx.yaml
+F:	Documentation/devicetree/bindings/mfd/realtek,rtd1xxx.yaml
+F:	Documentation/devicetree/bindings/mmc/realtek,rtd1296-dw-mshc.yaml
+F:	Documentation/devicetree/bindings/mmc/realtek,rtd1296-sdmmc.yaml
+F:	Documentation/devicetree/bindings/net/realtek,rtd1296-ethernet.yaml
+F:	Documentation/devicetree/bindings/net/realtek,rtd1296-gmac.yaml
+F:	Documentation/devicetree/bindings/nvmem/realtek,rtd1296-efuse.yaml
+F:	Documentation/devicetree/bindings/pci/realtek,rtd1296-pcie*.yaml
+F:	Documentation/devicetree/bindings/phy/realtek,rtd1296-sata-phy.yaml
+F:	Documentation/devicetree/bindings/power/realtek,rtd1296-gpu-power.yaml
+F:	Documentation/devicetree/bindings/power/realtek,rtd1296-nat-sram-power.yaml
+F:	Documentation/devicetree/bindings/power/realtek,rtd1296-tve-analog-power.yaml
+F:	Documentation/devicetree/bindings/rtc/realtek,rtd1295-rtc.yaml
+F:	Documentation/devicetree/bindings/sound/realtek,rtd1296-aio.yaml
+F:	Documentation/devicetree/bindings/spi/realtek,rtd1296-sfc.yaml
+F:	Documentation/devicetree/bindings/thermal/realtek,rtd1296-thermal.yaml
+F:	Documentation/devicetree/bindings/usb/realtek,rtd1296-usb-bus.yaml
 F:	arch/arm/boot/dts/realtek/
 F:	arch/arm/mach-realtek/
 F:	arch/arm64/boot/dts/realtek/
+F:	arch/arm64/configs/rtd1296.config
+F:	drivers/clk/realtek/
+F:	drivers/gpu/drm/realtek/
+F:	drivers/irqchip/irq-realtek-rtd1296-mux.c
+F:	drivers/media/platform/realtek/
+F:	drivers/mmc/host/dw_mmc-rtd1296.c
+F:	drivers/mmc/host/rtd1296-sd.c
+F:	drivers/net/ethernet/realtek/rtd1296-ethernet.c
+F:	drivers/net/ethernet/realtek/rtd1296-gmac.c
+F:	drivers/nvmem/rtd1296-efuse.c
+F:	drivers/pci/controller/pcie-rtd1296.c
+F:	drivers/phy/realtek/phy-rtd1296-sata.c
 F:	drivers/pinctrl/realtek/
+F:	drivers/pmdomain/realtek/
+F:	drivers/rtc/rtc-rtd119x.c
+F:	drivers/spi/spi-rtd1296-sfc.c
+F:	drivers/thermal/realtek-rtd1296.c
+F:	drivers/usb/host/ohci-rtd1296.c
+F:	drivers/usb/host/rtd1296-usb.c
+F:	drivers/usb/host/rtd1296-usb.h
+F:	drivers/usb/typec/rtd1296.c
+F:	include/dt-bindings/clock/realtek,rtd1296-clk.h
+F:	sound/soc/realtek/
 
 ARM/RISC-V/RENESAS ARCHITECTURE
 M:	Geert Uytterhoeven <geert+renesas@glider.be>
@@ -11102,6 +11144,12 @@ M:	Thomas Weißschuh <linux@weissschuh.net>
 L:	platform-driver-x86@vger.kernel.org
 S:	Maintained
 F:	drivers/platform/x86/gigabyte-wmi.c
+
+GMT G2227 REGULATORS
+M:	Nguyen Quang Minh <oss@minhng99.eu>
+S:	Maintained
+F:	Documentation/devicetree/bindings/regulator/gmt,g2227.yaml
+F:	drivers/regulator/g2227-regulator.c
 
 GNSS SUBSYSTEM
 M:	Johan Hovold <johan@kernel.org>
