@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/spi/realtek,rtd1296-sfc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1296 serial flash controller
+
+maintainers:
+  - Nguyen Quang Minh <oss@minhng99.eu>
+
+description:
+  The controller issues flash commands through accesses to a CPU aperture.
+  SB2 provides the posted-write flush between configuration and aperture
+  accesses. The serial clock divides the SB2 bus clock. The boot firmware supplies
+  the initial pad timing.
+
+allOf:
+  - $ref: spi-controller.yaml#
+
+properties:
+  compatible:
+    const: realtek,rtd1296-sfc
+
+  reg:
+    items:
+      - description: Command and timing registers
+      - description: Flash access aperture
+
+  reg-names:
+    items:
+      - const: ctrl
+      - const: flash
+
+  clocks:
+    items:
+      - description: SB2 bus clock
+
+  realtek,sb2:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: SB2 system controller
+
+required:
+  - compatible
+  - reg
+  - reg-names
+  - realtek,sb2
+  - clocks
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/realtek,rtd1296-clk.h>
+
+    spi@9801a800 {
+        compatible = "realtek,rtd1296-sfc";
+        reg = <0x9801a800 0x30>, <0x88100000 0x1000000>;
+        reg-names = "ctrl", "flash";
+        clocks = <&crt_clk RTD1296_CRT_CLK_SYS_SB2>;
+        realtek,sb2 = <&sb2>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        flash@0 {
+            compatible = "jedec,spi-nor";
+            reg = <0>;
+            spi-max-frequency = <25000000>;
+        };
+    };
