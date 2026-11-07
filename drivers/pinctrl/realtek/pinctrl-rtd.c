@@ -279,6 +279,15 @@ static const struct rtd_pin_sconfig_desc *rtd_pinctrl_find_sconfig(struct rtd_pi
 	return NULL;
 }
 
+static int rtd_pconf_set_field(struct rtd_pinctrl *data,
+			       const struct reg_field *field, u32 value)
+{
+	u32 mask = GENMASK(field->msb, field->lsb);
+
+	return regmap_update_bits(data->regmap_pinctrl, field->reg,
+				  mask, value << field->lsb);
+}
+
 static int rtd_pconf_parse_conf(struct rtd_pinctrl *data,
 				unsigned int pinnr,
 				enum pin_config_param param,
@@ -397,6 +406,12 @@ static int rtd_pconf_parse_conf(struct rtd_pinctrl *data,
 		break;
 
 	case PIN_CONFIG_POWER_SOURCE:
+		if (config_desc->power_field) {
+			if (arg >= config_desc->num_power_sources)
+				return -EINVAL;
+			return rtd_pconf_set_field(data, config_desc->power_field,
+					   config_desc->power_values[arg]);
+		}
 		if (config_desc->power_offset == NA) {
 			dev_err(data->dev, "Power source unsupported for pin: %s\n", name);
 			return -ENOTSUPP;
@@ -413,6 +428,11 @@ static int rtd_pconf_parse_conf(struct rtd_pinctrl *data,
 		break;
 
 	case PIN_CONFIG_SLEW_RATE:
+		if (config_desc->slew_field) {
+			if (arg > 1)
+				return -EINVAL;
+			return rtd_pconf_set_field(data, config_desc->slew_field, arg);
+		}
 		if (config_desc->slew_rate_offset == NA) {
 			dev_err(data->dev, "Slew rate setting unsupported for pin: %s\n", name);
 			return -ENOTSUPP;

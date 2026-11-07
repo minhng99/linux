@@ -24,6 +24,8 @@ struct rtd_pin_mux_desc {
 	u32 mux_value;
 };
 
+struct reg_field;
+
 struct rtd_pin_config_desc {
 	const char *name;
 	unsigned int reg_offset;
@@ -37,6 +39,10 @@ struct rtd_pin_config_desc {
 	unsigned int input_volt_offset;
 	unsigned int slew_rate_offset;
 	unsigned int hvil_offset;
+	const struct reg_field *power_field;
+	const u32 *power_values;
+	unsigned int num_power_sources;
+	const struct reg_field *slew_field;
 };
 
 struct rtd_pin_sconfig_desc {
